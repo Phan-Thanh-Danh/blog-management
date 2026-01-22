@@ -197,36 +197,62 @@ const handleRegister = () => {
 
 <style scoped>
 .auth-wrapper {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f5f5; /* xám nhạt, sạch, công sở */
   min-height: 100vh;
 }
 
 .auth-side-panel {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #111; /* đen tuyền */
+}
+
+.auth-side-panel,
+.auth-side-panel * {
+  color: #fff;
+}
+
+.form-control {
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
 }
 
 .form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+  border-color: #000;
+  box-shadow: 0 0 0 0.15rem rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
+  background: #000;
+  border: 1px solid #000;
+  color: #fff;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: #222;
+  border-color: #222;
+  transform: translateY(-1px);
 }
 
-.password-strength {
-  animation: fadeIn 0.3s ease;
+.btn-outline-secondary {
+  border-color: #000;
+  color: #000;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.btn-outline-secondary:hover {
+  background: #000;
+  color: #fff;
 }
+
+.text-primary {
+  color: #000 !important;
+}
+
+a.text-primary:hover {
+  color: #444 !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
 </style>
