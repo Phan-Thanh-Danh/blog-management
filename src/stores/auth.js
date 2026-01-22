@@ -6,6 +6,7 @@ export const useAuthStore = defineStore('auth', () => {
   const users = ref([])
   const posts = ref([])
   const comments = ref([])
+  const likes = ref([]) // THÊM: Lưu trữ likes
 
   // Load dữ liệu từ localStorage khi khởi tạo
   const loadData = () => {
@@ -13,18 +14,40 @@ export const useAuthStore = defineStore('auth', () => {
     const savedUser = localStorage.getItem('currentUser')
     const savedPosts = localStorage.getItem('posts')
     const savedComments = localStorage.getItem('comments')
+    const savedLikes = localStorage.getItem('likes')
     
     if (savedUsers) users.value = JSON.parse(savedUsers)
     if (savedUser) user.value = JSON.parse(savedUser)
-    if (savedPosts) posts.value = JSON.parse(savedPosts)
-    if (savedComments) comments.value = JSON.parse(savedComments)
+    if (savedLikes) likes.value = JSON.parse(savedLikes)
+    
+    // Lọc bỏ các bài viết không hợp lệ
+    if (savedPosts) {
+      const allPosts = JSON.parse(savedPosts)
+      posts.value = allPosts.filter(post => 
+        post.authorId && 
+        post.title && 
+        post.content &&
+        post.createdAt
+      )
+      localStorage.setItem('posts', JSON.stringify(posts.value))
+    }
+    
+    // Lọc bỏ các comments không hợp lệ
+    if (savedComments) {
+      const allComments = JSON.parse(savedComments)
+      comments.value = allComments.filter(comment => 
+        comment.authorId && 
+        comment.content
+      )
+      localStorage.setItem('comments', JSON.stringify(comments.value))
+    }
   }
 
   loadData()
 
   const isAuthenticated = computed(() => user.value !== null)
 
-  // Y2.1 - ĐĂNG KÝ
+  // ĐĂNG KÝ
   const register = (userData) => {
     const existingUser = users.value.find(u => u.email === userData.email)
     if (existingUser) {
@@ -45,7 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
     return newUser
   }
 
-  // Y2.1 - ĐĂNG NHẬP
+  // ĐĂNG NHẬP
   const login = (email, password) => {
     const foundUser = users.value.find(
       u => u.email === email && u.password === password
@@ -66,7 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('currentUser')
   }
 
-  // Y2.2 - TẠO BÀI VIẾT
+  // TẠO BÀI VIẾT
   const createPost = (postData) => {
     if (!user.value) throw new Error('Bạn cần đăng nhập')
 
@@ -87,7 +110,7 @@ export const useAuthStore = defineStore('auth', () => {
     return newPost
   }
 
-  // Y2.2 - CHỈNH SỬA BÀI VIẾT
+  // CHỈNH SỬA BÀI VIẾT
   const updatePost = (postId, postData) => {
     const index = posts.value.findIndex(p => p.id === postId)
     if (index === -1) throw new Error('Không tìm thấy bài viết')
@@ -109,30 +132,40 @@ export const useAuthStore = defineStore('auth', () => {
     return posts.value[index]
   }
 
-  // Y2.2 - XÓA BÀI VIẾT
+  // XÓA BÀI VIẾT
   const deletePost = (postId) => {
     const post = posts.value.find(p => p.id === postId)
-    if (!post) throw new Error('Không tìm thấy bài viết')
+    
+    if (!post) {
+      throw new Error('Không tìm thấy bài viết')
+    }
 
-    if (post.authorId !== user.value.id) {
+    if (!user.value) {
+      throw new Error('Bạn cần đăng nhập để xóa bài viết')
+    }
+
+    if (post.authorId && post.authorId !== user.value.id) {
       throw new Error('Bạn không có quyền xóa bài viết này')
     }
 
     posts.value = posts.value.filter(p => p.id !== postId)
     comments.value = comments.value.filter(c => c.postId !== postId)
+    likes.value = likes.value.filter(l => l.postId !== postId)
     
     localStorage.setItem('posts', JSON.stringify(posts.value))
     localStorage.setItem('comments', JSON.stringify(comments.value))
+    localStorage.setItem('likes', JSON.stringify(likes.value))
   }
 
-  // Y2.3 - TẠO BÌNH LUẬN
-  const createComment = (postId, content) => {
+  // TẠO BÌNH LUẬN
+  const createComment = (postId, content, parentId = null) => {
     if (!user.value) throw new Error('Bạn cần đăng nhập')
 
     const newComment = {
       id: Date.now(),
       postId: postId,
       content: content,
+      parentId: parentId, // null nếu là comment gốc, có giá trị nếu là reply
       authorId: user.value.id,
       authorName: user.value.name,
       authorAvatar: user.value.avatar,
@@ -144,16 +177,59 @@ export const useAuthStore = defineStore('auth', () => {
     return newComment
   }
 
-  // Lấy comments của một bài viết
+  // LẤY COMMENTS CỦA BÀI VIẾT (chỉ comments gốc)
   const getPostComments = (postId) => {
-    return comments.value.filter(c => c.postId === postId)
+    return comments.value.filter(c => c.postId === postId && !c.parentId)
   }
 
-  // Y2.4 - CẬP NHẬT THÔNG TIN CÁ NHÂN
+  // LẤY REPLIES CỦA MỘT COMMENT
+  const getCommentReplies = (commentId) => {
+    return comments.value.filter(c => c.parentId === commentId)
+  }
+
+  // TOGGLE LIKE BÀI VIẾT
+  const toggleLike = (postId) => {
+    if (!user.value) throw new Error('Bạn cần đăng nhập để thích bài viết')
+
+    const existingLike = likes.value.find(
+      l => l.postId === postId && l.userId === user.value.id
+    )
+
+    if (existingLike) {
+      // Unlike
+      likes.value = likes.value.filter(
+        l => !(l.postId === postId && l.userId === user.value.id)
+      )
+    } else {
+      // Like
+      likes.value.push({
+        id: Date.now(),
+        postId: postId,
+        userId: user.value.id,
+        createdAt: new Date().toISOString()
+      })
+    }
+
+    localStorage.setItem('likes', JSON.stringify(likes.value))
+  }
+
+  // KIỂM TRA ĐÃ LIKE BÀI VIẾT CHƯA
+  const isPostLiked = (postId) => {
+    if (!user.value) return false
+    return likes.value.some(
+      l => l.postId === postId && l.userId === user.value.id
+    )
+  }
+
+  // ĐÊM SỐ LIKE CỦA BÀI VIẾT
+  const getPostLikesCount = (postId) => {
+    return likes.value.filter(l => l.postId === postId).length
+  }
+
+  // CẬP NHẬT THÔNG TIN CÁ NHÂN
   const updateProfile = (userData) => {
     if (!user.value) throw new Error('Bạn cần đăng nhập')
 
-    // Cập nhật trong danh sách users
     const userIndex = users.value.findIndex(u => u.id === user.value.id)
     if (userIndex !== -1) {
       users.value[userIndex] = {
@@ -177,6 +253,7 @@ export const useAuthStore = defineStore('auth', () => {
     users,
     posts,
     comments,
+    likes,
     isAuthenticated,
     register,
     login,
@@ -186,6 +263,10 @@ export const useAuthStore = defineStore('auth', () => {
     deletePost,
     createComment,
     getPostComments,
+    getCommentReplies,
+    toggleLike,
+    isPostLiked,
+    getPostLikesCount,
     updateProfile
   }
 })
