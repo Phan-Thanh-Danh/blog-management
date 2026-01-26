@@ -1,4 +1,4 @@
-<template>
+ <template>
   <div class="home-wrapper">
     <!-- Hero Section -->
     <div class="hero-section bg-gradient text-dark py-5 mb-5">
@@ -201,11 +201,24 @@
                 <textarea v-model="editForm.content" class="form-control" rows="8" required></textarea>
               </div>
               <div class="mb-3">
-                <label class="form-label fw-bold">Hình ảnh (URL)</label>
-                <input v-model="editForm.image" type="url" class="form-control" placeholder="https://example.com/image.jpg">
-              </div>
-              <div v-if="editForm.image" class="mb-3">
-                <img :src="editForm.image" class="img-fluid rounded" style="max-height: 200px;" alt="Preview">
+                <label class="form-label fw-bold">Hình ảnh minh họa</label>
+                <input 
+                  type="file" 
+                  @change="handleEditImageUpload"
+                  class="form-control mb-2"
+                  accept="image/*"
+                >
+                <div v-if="editForm.image" class="position-relative d-inline-block">
+                  <img :src="editForm.image" class="img-fluid rounded" style="max-height: 200px;" alt="Preview">
+                  <button 
+                    @click="removeEditImage" 
+                    type="button" 
+                    class="btn btn-danger btn-sm position-absolute top-0 end-0"
+                    style="transform: translate(50%, -50%); padding: 0.1rem 0.3rem;"
+                  >
+                    &times;
+                  </button>
+                </div>
               </div>
               <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
@@ -268,9 +281,34 @@ const editPost = (post) => {
   }
   
   if (!editModal) {
-    editModal = new Modal(document.getElementById('editModal'))
+    const modalEl = document.getElementById('editModal')
+    if (modalEl) editModal = new Modal(modalEl)
   }
-  editModal.show()
+  if (editModal) editModal.show()
+}
+
+const handleEditImageUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Kích thước ảnh quá lớn (tối đa 2MB)')
+      event.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      editForm.value.image = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const removeEditImage = () => {
+  editForm.value.image = ''
+  // Try to clear input if currently in DOM
+  const fileInput = document.querySelector('#editModal input[type="file"]')
+  if (fileInput) fileInput.value = ''
 }
 
 const updatePost = () => {

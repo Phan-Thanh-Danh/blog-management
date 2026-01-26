@@ -15,28 +15,28 @@ export const useAuthStore = defineStore('auth', () => {
     const savedPosts = localStorage.getItem('posts')
     const savedComments = localStorage.getItem('comments')
     const savedLikes = localStorage.getItem('likes')
-    
+
     if (savedUsers) users.value = JSON.parse(savedUsers)
     if (savedUser) user.value = JSON.parse(savedUser)
     if (savedLikes) likes.value = JSON.parse(savedLikes)
-    
+
     // Lọc bỏ các bài viết không hợp lệ
     if (savedPosts) {
       const allPosts = JSON.parse(savedPosts)
-      posts.value = allPosts.filter(post => 
-        post.authorId && 
-        post.title && 
+      posts.value = allPosts.filter(post =>
+        post.authorId &&
+        post.title &&
         post.content &&
         post.createdAt
       )
       localStorage.setItem('posts', JSON.stringify(posts.value))
     }
-    
+
     // Lọc bỏ các comments không hợp lệ
     if (savedComments) {
       const allComments = JSON.parse(savedComments)
-      comments.value = allComments.filter(comment => 
-        comment.authorId && 
+      comments.value = allComments.filter(comment =>
+        comment.authorId &&
         comment.content
       )
       localStorage.setItem('comments', JSON.stringify(comments.value))
@@ -93,11 +93,18 @@ export const useAuthStore = defineStore('auth', () => {
   const createPost = (postData) => {
     if (!user.value) throw new Error('Bạn cần đăng nhập')
 
+    // Handle images array
+    const images = postData.images || []
+    if (postData.image && images.length === 0) {
+      images.push(postData.image)
+    }
+
     const newPost = {
       id: Date.now(),
       title: postData.title,
       content: postData.content,
-      image: postData.image || '',
+      images: images,
+      image: images.length > 0 ? images[0] : '', // Backward compatibility
       authorId: user.value.id,
       authorName: user.value.name,
       authorAvatar: user.value.avatar,
@@ -120,11 +127,26 @@ export const useAuthStore = defineStore('auth', () => {
       throw new Error('Bạn không có quyền chỉnh sửa bài viết này')
     }
 
+    // Handle images update
+    let updatedImages = postData.images
+    if (!updatedImages && postData.image) {
+      // If only image is passed (legacy update), wrap it
+      updatedImages = [postData.image]
+    }
+    // If no new images provided, keep old ones? Or replace? 
+    // Usually update sends the full state. If postData.images is provided, use it.
+    // If not, we might be in a legacy view that only sends .image or we assume no change if not provided.
+    // For now, let's assume postData will contain the authoritative list of images if it's a new style edit.
+
+    // safe fallback
+    const finalImages = updatedImages !== undefined ? updatedImages : (post.images || (post.image ? [post.image] : []))
+
     posts.value[index] = {
       ...post,
       title: postData.title,
       content: postData.content,
-      image: postData.image || post.image,
+      images: finalImages,
+      image: finalImages.length > 0 ? finalImages[0] : '',
       updatedAt: new Date().toISOString()
     }
 
@@ -135,7 +157,7 @@ export const useAuthStore = defineStore('auth', () => {
   // XÓA BÀI VIẾT
   const deletePost = (postId) => {
     const post = posts.value.find(p => p.id === postId)
-    
+
     if (!post) {
       throw new Error('Không tìm thấy bài viết')
     }
@@ -151,7 +173,7 @@ export const useAuthStore = defineStore('auth', () => {
     posts.value = posts.value.filter(p => p.id !== postId)
     comments.value = comments.value.filter(c => c.postId !== postId)
     likes.value = likes.value.filter(l => l.postId !== postId)
-    
+
     localStorage.setItem('posts', JSON.stringify(posts.value))
     localStorage.setItem('comments', JSON.stringify(comments.value))
     localStorage.setItem('likes', JSON.stringify(likes.value))

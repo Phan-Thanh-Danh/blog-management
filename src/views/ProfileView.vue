@@ -57,16 +57,27 @@
 
               <div class="mb-3">
                 <label class="form-label">
-                  <i class="bi bi-image"></i> URL Avatar
+                  <i class="bi bi-image"></i> Ảnh đại diện
                 </label>
-                <input 
-                  v-model="form.avatar" 
-                  type="url" 
-                  class="form-control"
-                  placeholder="https://example.com/avatar.jpg"
-                >
+                <div class="input-group">
+                  <input 
+                    type="file" 
+                    @change="handleAvatarUpload"
+                    class="form-control"
+                    accept="image/*"
+                    id="avatarInput"
+                  >
+                  <button 
+                    v-if="form.avatar && !form.avatar.includes('ui-avatars.com')" 
+                    @click="removeAvatar"
+                    class="btn btn-outline-danger" 
+                    type="button"
+                  >
+                    Xóa ảnh
+                  </button>
+                </div>
                 <small class="text-muted">
-                  Để trống để sử dụng avatar mặc định từ tên của bạn
+                  Chọn ảnh từ máy tính (tối đa 2MB). Để trống sẽ dùng avatar mặc định.
                 </small>
               </div>
 
@@ -307,6 +318,29 @@ const truncateText = (text, maxLength) => {
 // Hàm đếm số bình luận của một bài viết
 const getCommentsCount = (postId) => {
   return authStore.comments.filter(c => c.postId === postId).length
+}
+
+const handleAvatarUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    if (file.size > 2 * 1024 * 1024) { // Limit 2MB
+      error.value = 'Kích thước ảnh quá lớn (tối đa 2MB)'
+      event.target.value = '' // Reset input
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      form.value.avatar = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const removeAvatar = () => {
+  form.value.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(form.value.name)}`
+  const fileInput = document.getElementById('avatarInput')
+  if (fileInput) fileInput.value = ''
 }
 
 // Xử lý cập nhật thông tin

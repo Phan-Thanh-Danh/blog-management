@@ -45,21 +45,34 @@
                     <i class="bi bi-image"></i> Hình ảnh minh họa
                   </label>
                   <input 
-                    v-model="form.image" 
-                    type="url" 
+                    type="file" 
+                    multiple
+                    @change="handleImageUpload"
                     class="form-control"
-                    placeholder="https://example.com/image.jpg"
+                    accept="image/*"
                   >
-                  <small class="text-muted">Dán URL hình ảnh hoặc để trống</small>
+                  <small class="text-muted">Chọn một hoặc nhiều ảnh (tối đa 2MB/ảnh)</small>
                 </div>
 
-                <!-- Preview Image -->
-                <div v-if="form.image" class="mb-4">
+                <!-- Preview Images -->
+                <div v-if="form.images.length > 0" class="mb-4">
                   <label class="form-label fw-bold">
-                    <i class="bi bi-eye"></i> Xem trước
+                    <i class="bi bi-eye"></i> Xem trước ({{ form.images.length }} ảnh)
                   </label>
-                  <div class="image-preview">
-                    <img :src="form.image" class="img-fluid rounded" alt="Preview">
+                  <div class="row g-2">
+                    <div v-for="(img, index) in form.images" :key="index" class="col-4 col-md-3 position-relative">
+                      <div class="ratio ratio-1x1">
+                        <img :src="img" class="img-fluid rounded border object-fit-cover" alt="Preview">
+                      </div>
+                      <button 
+                        @click="removeImage(index)" 
+                        type="button" 
+                        class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-1 lh-1"
+                        style="width: 24px; height: 24px;"
+                      >
+                        &times;
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -108,8 +121,34 @@ const authStore = useAuthStore()
 const form = ref({
   title: '',
   content: '',
-  image: ''
+  images: [] // Changed from image: ''
 })
+
+const handleImageUpload = (event) => {
+  const files = event.target.files
+  if (files && files.length > 0) {
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        // Check size of each file
+        if (file.size > 2 * 1024 * 1024) { 
+           alert(`File ${file.name} quá lớn (tối đa 2MB). Đã bỏ qua.`)
+           continue
+        }
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          form.value.images.push(e.target.result)
+        }
+        reader.readAsDataURL(file)
+    }
+  }
+  // Clear input to allow re-upload of same files if needed (though multi-file inputs are tricky with re-selection, this is generally safe)
+  event.target.value = ''
+}
+
+const removeImage = (index) => {
+    form.value.images.splice(index, 1)
+}
 
 const handleSubmit = () => {
   try {

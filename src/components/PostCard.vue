@@ -1,12 +1,21 @@
 <template>
   <div class="card mb-4 shadow-sm post-card">
-    <img 
-      v-if="post.image" 
-      :src="post.image" 
-      class="card-img-top" 
-      :alt="post.title" 
-      style="height: 250px; object-fit: cover;"
+    <div 
+      v-if="displayImages.length > 0" 
+      class="grid-layout"
+      :class="`cols-${Math.min(displayImages.length, 4)}`"
     >
+      <div 
+        v-for="(img, index) in displayImages.slice(0, 4)" 
+        :key="index" 
+        class="grid-item"
+      >
+        <img :src="img" :alt="post.title">
+        <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
+          +{{ displayImages.length - 4 }}
+        </div>
+      </div>
+    </div>
     
     <div class="card-body">
       <h5 class="card-title fw-bold">{{ post.title }}</h5>
@@ -85,6 +94,17 @@ const props = defineProps({
 
 const emit = defineEmits(['edit', 'delete'])
 
+// Computed: Lấy danh sách ảnh để hiển thị
+const displayImages = computed(() => {
+  if (props.post.images && props.post.images.length > 0) {
+    return props.post.images
+  }
+  if (props.post.image) {
+    return [props.post.image]
+  }
+  return []
+})
+
 // Computed: Đếm số likes
 const likesCount = computed(() => {
   return authStore.getPostLikesCount(props.post.id)
@@ -151,6 +171,53 @@ const handleDelete = () => {
 .post-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Images Grid Styles */
+.grid-layout {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.grid-layout.cols-1 { grid-template-columns: 1fr; aspect-ratio: auto; }
+.grid-layout.cols-1 .grid-item img { max-height: 500px; object-fit: cover; }
+
+.grid-layout.cols-2 { grid-template-columns: 1fr 1fr; }
+.grid-layout.cols-3 { 
+  grid-template-columns: 1fr 1fr; 
+  grid-template-rows: 1fr 1fr;
+}
+.grid-layout.cols-3 .grid-item:first-child { grid-row: span 2; } 
+
+.grid-layout.cols-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.grid-item {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.more-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
 }
 
 .card-title {
