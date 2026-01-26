@@ -7,15 +7,54 @@
         <div class="card shadow-sm mb-4 post-detail-card">
           <!-- Hình ảnh bài viết -->
           <!-- Hình ảnh bài viết -->
-          <div v-if="displayImages.length > 0" class="post-images mb-4">
-            <img 
-              v-for="(img, index) in displayImages"
-              :key="index"
-              :src="img" 
-              class="img-fluid rounded border mb-2 w-100" 
-              :alt="post.title" 
-              style="max-height: 800px; object-fit: contain; background: #f8f9fa;"
+          <!-- Hình ảnh bài viết (Grid Layout) -->
+          <div v-if="displayImages.length > 0" class="mb-4">
+            <div 
+              class="grid-layout" 
+              :class="getGridClass(displayImages.length)"
             >
+              <div 
+                v-for="(img, index) in displayImages.slice(0, 4)" 
+                :key="index" 
+                class="grid-item"
+                @click="openLightbox(index)"
+              >
+                <img :src="img" :alt="post.title">
+                <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
+                  +{{ displayImages.length - 4 }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lightbox Modal -->
+          <div v-if="lightboxOpen" class="lightbox-overlay" @click.self="closeLightbox">
+            <button class="btn-close-lightbox" @click="closeLightbox">
+              <i class="bi bi-x-lg"></i>
+            </button>
+            
+            <button 
+              class="btn-nav prev" 
+              @click.stop="prevImage" 
+              v-if="displayImages.length > 1"
+            >
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            
+            <div class="lightbox-content">
+              <img :src="displayImages[currentImageIndex]" class="lightbox-img" alt="Fullscreen">
+              <div class="lightbox-counter">
+                {{ currentImageIndex + 1 }} / {{ displayImages.length }}
+              </div>
+            </div>
+
+            <button 
+              class="btn-nav next" 
+              @click.stop="nextImage" 
+              v-if="displayImages.length > 1"
+            >
+              <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
           
           <div class="card-body p-4 p-md-5">
@@ -235,6 +274,9 @@ const editForm = ref({
   image: ''
 })
 
+// Lightbox state
+const lightboxOpen = ref(false)
+const currentImageIndex = ref(0)
 let editModal = null
 
 // Computed: Lấy bài viết
@@ -242,6 +284,34 @@ const post = computed(() => {
   const postId = parseInt(route.params.id)
   return authStore.posts.find(p => p.id === postId)
 })
+
+const getGridClass = (count) => {
+  if (count <= 1) return 'cols-1'
+  if (count === 2) return 'cols-2'
+  if (count === 3) return 'cols-3'
+  return 'cols-4'
+}
+
+const openLightbox = (index) => {
+  currentImageIndex.value = index
+  lightboxOpen.value = true
+  document.body.style.overflow = 'hidden' // Disable scroll
+}
+
+const closeLightbox = () => {
+  lightboxOpen.value = false
+  document.body.style.overflow = '' // Enable scroll
+}
+
+const prevImage = () => {
+  const total = displayImages.value.length
+  currentImageIndex.value = (currentImageIndex.value - 1 + total) % total
+}
+
+const nextImage = () => {
+  const total = displayImages.value.length
+  currentImageIndex.value = (currentImageIndex.value + 1) % total
+}
 
 // Computed: Lấy comments
 const postComments = computed(() => {
@@ -414,17 +484,163 @@ const deletePost = () => {
   font-size: 1rem;
 }
 
-.comments-card {
+/* Images Grid Styles */
+.grid-layout {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f0f0f0;
+}
+
+.grid-layout.cols-1 { grid-template-columns: 1fr; }
+.grid-layout.cols-1 .grid-item img { 
+  max-height: 500px; 
+  width: 100%;
+  object-fit: contain; 
+}
+
+.grid-layout.cols-2 { 
+  aspect-ratio: 16/9;
+  grid-template-columns: 1fr 1fr; 
+}
+
+.grid-layout.cols-3 { 
+    aspect-ratio: 16/9;
+    grid-template-columns: 1.5fr 1fr; 
+    grid-template-rows: 1fr 1fr;
+}
+.grid-layout.cols-3 .grid-item:first-child { grid-row: span 2; } 
+
+.grid-layout.cols-4 { 
+  aspect-ratio: 16/9;
+  grid-template-columns: 1fr 1fr; 
+  grid-template-rows: 1fr 1fr; 
+}
+
+.grid-item {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.grid-item:hover img {
+    transform: scale(1.05);
+}
+
+.more-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    backdrop-filter: blur(2px);
+}
+
+/* Lightbox Styles */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.lightbox-counter {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.btn-close-lightbox {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  border-radius: 12px;
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 10000;
 }
 
-.comments-list {
-  max-height: none;
+.btn-close-lightbox:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
-.empty-comments i {
-  opacity: 0.3;
+.btn-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10000;
+}
+
+.btn-nav:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.btn-nav.prev {
+  left: 20px;
+}
+
+.btn-nav.next {
+  right: 20px;
 }
 
 @media (max-width: 768px) {
@@ -434,6 +650,16 @@ const deletePost = () => {
   
   .post-content {
     font-size: 1rem;
+  }
+
+  .grid-layout {
+      gap: 2px;
+  }
+  
+  .btn-nav {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
   }
 }
 </style>
