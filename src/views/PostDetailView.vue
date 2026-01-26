@@ -222,24 +222,34 @@
                 <input 
                   type="file" 
                   @change="handleEditImageUpload"
-                  class="form-control mb-2"
+                  class="form-control mb-3"
                   accept="image/*"
+                  multiple
                 >
-                <div v-if="editForm.image" class="position-relative d-inline-block">
-                  <img 
-                    :src="editForm.image" 
-                    height="100" 
-                    class="rounded border" 
-                    alt="Preview"
+                
+                <!-- Hiển thị các ảnh hiện có -->
+                <div v-if="editForm.images.length > 0" class="d-flex flex-wrap gap-2">
+                  <div 
+                    v-for="(img, index) in editForm.images" 
+                    :key="index"
+                    class="position-relative"
                   >
-                  <button 
-                    @click="removeEditImage" 
-                    type="button" 
-                    class="btn btn-danger btn-sm position-absolute top-0 end-0"
-                    style="transform: translate(50%, -50%); padding: 0.1rem 0.3rem;"
-                  >
-                    &times;
-                  </button>
+                    <img 
+                      :src="img" 
+                      height="100" 
+                      class="rounded border" 
+                      alt="Preview"
+                      style="object-fit: cover; width: 100px;"
+                    >
+                    <button 
+                      @click="removeEditImage(index)" 
+                      type="button" 
+                      class="btn btn-danger btn-sm position-absolute top-0 end-0"
+                      style="transform: translate(50%, -50%); padding: 0.1rem 0.3rem;"
+                    >
+                      &times;
+                    </button>
+                  </div>
                 </div>
               </div>
               <button type="submit" class="btn btn-primary">
@@ -269,7 +279,8 @@ const editForm = ref({
   id: null,
   title: '',
   content: '',
-  image: ''
+  image: '',
+  images: []
 })
 
 // Lightbox state
@@ -387,11 +398,20 @@ const handleLike = () => {
 const editPost = () => {
   if (!post.value) return
   
+  // Lấy tất cả ảnh từ bài viết
+  let allImages = []
+  if (post.value.images && post.value.images.length > 0) {
+    allImages = [...post.value.images]
+  } else if (post.value.image) {
+    allImages = [post.value.image]
+  }
+  
   editForm.value = {
     id: post.value.id,
     title: post.value.title,
     content: post.value.content,
-    image: post.value.image
+    image: post.value.image || '',
+    images: allImages
   }
   
   if (!editModal) {
@@ -402,27 +422,37 @@ const editPost = () => {
 }
 
 const handleEditImageUpload = (event) => {
-  const file = event.target.files[0]
-  if (file) {
+  const files = event.target.files
+  if (!files || files.length === 0) return
+
+  const newImages = []
+  let filesProcessed = 0
+
+  Array.from(files).forEach((file) => {
     if (file.size > 2 * 1024 * 1024) {
-      alert('Kích thước ảnh quá lớn (tối đa 2MB)')
-      event.target.value = ''
+      alert(`Ảnh ${file.name} quá lớn (tối đa 2MB)`)
+      filesProcessed++
       return
     }
 
     const reader = new FileReader()
     reader.onload = (e) => {
-      editForm.value.image = e.target.result
+      newImages.push(e.target.result)
+      filesProcessed++
+
+      if (filesProcessed === files.length) {
+        editForm.value.images = [...editForm.value.images, ...newImages]
+      }
     }
     reader.readAsDataURL(file)
-  }
+  })
+  
+  // Clear input sau khi đọc xong
+  event.target.value = ''
 }
 
-const removeEditImage = () => {
-  editForm.value.image = ''
-  // Try to clear input if currently in DOM
-  const fileInput = document.querySelector('#editPostModal input[type="file"]')
-  if (fileInput) fileInput.value = ''
+const removeEditImage = (index) => {
+  editForm.value.images.splice(index, 1)
 }
 
 const updatePost = () => {
