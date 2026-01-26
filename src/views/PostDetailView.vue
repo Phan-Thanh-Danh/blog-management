@@ -5,62 +5,7 @@
       <div class="col-lg-8 mx-auto">
         <!-- Card bài viết chính -->
         <div class="card shadow-sm mb-4 post-detail-card">
-          <!-- Hình ảnh bài viết -->
-          <!-- Hình ảnh bài viết -->
-          <!-- Hình ảnh bài viết (Grid Layout) -->
-          <div v-if="displayImages.length > 0" class="mb-4">
-            <div 
-              class="grid-layout" 
-              :class="getGridClass(displayImages.length)"
-            >
-              <div 
-                v-for="(img, index) in displayImages.slice(0, 4)" 
-                :key="index" 
-                class="grid-item"
-                @click="openLightbox(index)"
-              >
-                <img :src="img" :alt="post.title">
-                <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
-                  +{{ displayImages.length - 4 }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Lightbox Modal -->
-          <div v-if="lightboxOpen" class="lightbox-overlay" @click.self="closeLightbox">
-            <button class="btn-close-lightbox" @click="closeLightbox">
-              <i class="bi bi-x-lg"></i>
-            </button>
-            
-            <button 
-              class="btn-nav prev" 
-              @click.stop="prevImage" 
-              v-if="displayImages.length > 1"
-            >
-              <i class="bi bi-chevron-left"></i>
-            </button>
-            
-            <div class="lightbox-content">
-              <img :src="displayImages[currentImageIndex]" class="lightbox-img" alt="Fullscreen">
-              <div class="lightbox-counter">
-                {{ currentImageIndex + 1 }} / {{ displayImages.length }}
-              </div>
-            </div>
-
-            <button 
-              class="btn-nav next" 
-              @click.stop="nextImage" 
-              v-if="displayImages.length > 1"
-            >
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
-          
           <div class="card-body p-4 p-md-5">
-            <!-- Tiêu đề bài viết -->
-            <h1 class="post-title mb-4">{{ post.title }}</h1>
-            
             <!-- Thông tin tác giả -->
             <div class="author-info d-flex align-items-center mb-4 pb-4 border-bottom">
               <img 
@@ -86,6 +31,59 @@
                   <i class="bi bi-trash"></i> Xóa
                 </button>
               </div>
+            </div>
+
+            <!-- Tiêu đề bài viết -->
+            <h1 class="post-title mb-4">{{ post.title }}</h1>
+
+            <!-- Hình ảnh bài viết (Grid Layout) -->
+            <div v-if="displayImages.length > 0" class="mb-4">
+              <div 
+                class="grid-layout" 
+                :class="getGridClass(displayImages.length)"
+              >
+                <div 
+                  v-for="(img, index) in displayImages.slice(0, 4)" 
+                  :key="index" 
+                  class="grid-item"
+                  @click="openLightbox(index)"
+                >
+                  <img :src="img" :alt="post.title">
+                  <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
+                    +{{ displayImages.length - 4 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lightbox Modal -->
+            <div v-if="lightboxOpen" class="lightbox-overlay" @click.self="closeLightbox">
+              <button class="btn-close-lightbox" @click="closeLightbox">
+                <i class="bi bi-x-lg"></i>
+              </button>
+              
+              <button 
+                class="btn-nav prev" 
+                @click.stop="prevImage" 
+                v-if="displayImages.length > 1"
+              >
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              
+              <div class="lightbox-content">
+                <img :src="displayImages[currentImageIndex]" class="lightbox-img" alt="Fullscreen">
+                <div class="lightbox-counter">
+                  {{ currentImageIndex + 1 }} / {{ displayImages.length }}
+                </div>
+              </div>
+
+              <button 
+                class="btn-nav next" 
+                @click.stop="nextImage" 
+                v-if="displayImages.length > 1"
+              >
+                <i class="bi bi-chevron-right"></i>
+              </button>
             </div>
 
             <!-- Nội dung bài viết -->
