@@ -32,11 +32,37 @@
       <div class="row">
         <!-- Posts Section -->
         <div class="col-lg-8">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold mb-0">
-              <i class="bi bi-newspaper"></i> Bài viết mới nhất
-            </h2>
-            <div class="dropdown">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div class="d-flex align-items-center gap-3">
+              <h2 class="fw-bold mb-0">
+                <i class="bi bi-newspaper"></i> Bài viết
+              </h2>
+              <div class="btn-group shadow-sm">
+                <button 
+                  @click="feedType = 'all'" 
+                  class="btn btn-sm"
+                  :class="feedType === 'all' ? 'btn-primary' : 'btn-outline-primary'"
+                >
+                  Tất cả
+                </button>
+                <button 
+                  v-if="authStore.isAuthenticated"
+                  @click="feedType = 'following'" 
+                  class="btn btn-sm"
+                  :class="feedType === 'following' ? 'btn-primary' : 'btn-outline-primary'"
+                >
+                  Đang theo dõi
+                </button>
+              </div>
+            </div>
+
+            <div class="dropdown d-flex gap-2 ms-auto">
+              <div v-if="searchFilter" class="d-flex align-items-center me-2">
+                <span class="badge bg-light text-dark border me-2">
+                  Kết quả cho: "{{ searchFilter }}"
+                  <button @click="clearFilter" class="btn-close ms-2" style="font-size: 0.5rem;"></button>
+                </span>
+              </div>
               <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                 <i class="bi bi-funnel"></i> Sắp xếp
               </button>
@@ -51,15 +77,27 @@
           <!-- Empty State -->
           <div v-if="sortedPosts.length === 0" class="empty-state text-center py-5">
             <i class="bi bi-inbox" style="font-size: 5rem; color: #ddd;"></i>
-            <h3 class="mt-4 text-muted">Chưa có bài viết nào</h3>
-            <p class="text-muted mb-4">Hãy là người đầu tiên đăng bài!</p>
-            <router-link v-if="authStore.isAuthenticated" to="/create-post" class="btn btn-primary btn-lg">
+            <h3 class="mt-4 text-muted">
+              {{ feedType === 'following' ? 'Chưa có bài viết từ người bạn theo dõi' : 'Chưa có bài viết nào' }}
+            </h3>
+            <p v-if="feedType === 'following'" class="text-muted mb-4">
+              Hãy theo dõi thêm nhiều tác giả để thấy bài viết của họ tại đây!
+            </p>
+            <p v-else class="text-muted mb-4">Hãy là người đầu tiên đăng bài!</p>
+            
+            <div v-if="feedType === 'following'">
+              <button @click="feedType = 'all'" class="btn btn-outline-primary">
+                Khám phá tất cả bài viết
+              </button>
+            </div>
+            <router-link v-else-if="authStore.isAuthenticated" to="/create-post" class="btn btn-primary btn-lg">
               <i class="bi bi-plus-circle"></i> Viết bài đầu tiên
             </router-link>
           </div>
 
           <!-- Posts List -->
           <div v-else>
+<!-- ... existing code ... -->
             <PostCard 
               v-for="post in sortedPosts" 
               :key="post.id" 
@@ -124,6 +162,28 @@
               </div>
             </div>
 
+            <!-- Categories Card -->
+            <div class="card shadow-sm mb-4">
+              <div class="card-body">
+                <h5 class="card-title fw-bold mb-3">
+                  <i class="bi bi-grid"></i> Danh mục
+                </h5>
+                <div class="list-group list-group-flush">
+                  <button 
+                    v-for="cat in authStore.categories" 
+                    :key="cat"
+                    @click="filterByTag(cat)"
+                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 px-0 py-2 bg-transparent"
+                  >
+                    <span>{{ cat }}</span>
+                    <span class="badge bg-light text-dark border">
+                      {{ authStore.posts.filter(p => p.category === cat).length }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Stats Card -->
             <div class="card shadow-sm mb-4">
               <div class="card-body">
@@ -166,12 +226,12 @@
                   <i class="bi bi-tags"></i> Xu hướng
                 </h5>
                 <div class="d-flex flex-wrap gap-2">
-                  <span class="badge bg-primary">#VueJS</span>
-                  <span class="badge bg-success">#JavaScript</span>
-                  <span class="badge bg-danger">#WebDev</span>
-                  <span class="badge bg-warning text-dark">#Frontend</span>
-                  <span class="badge bg-info">#Coding</span>
-                  <span class="badge bg-secondary">#Tech</span>
+                  <span @click="filterByTag('#VueJS')" class="badge bg-primary">#VueJS</span>
+                  <span @click="filterByTag('#JavaScript')" class="badge bg-success">#JavaScript</span>
+                  <span @click="filterByTag('#WebDev')" class="badge bg-danger">#WebDev</span>
+                  <span @click="filterByTag('#Frontend')" class="badge bg-warning text-dark">#Frontend</span>
+                  <span @click="filterByTag('#Coding')" class="badge bg-info">#Coding</span>
+                  <span @click="filterByTag('#Tech')" class="badge bg-secondary">#Tech</span>
                 </div>
               </div>
             </div>
@@ -237,14 +297,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import PostCard from '../components/PostCard.vue'
 import { Modal } from 'bootstrap'
+import { compressImage } from '../utils/imageHelper'
 
+const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
 const sortBy = ref('newest')
+const searchFilter = ref('')
+const feedType = ref('all') // 'all' | 'following'
+
+// Watch query search để cập nhật filter
+watch(() => route.query.search, (newSearch) => {
+  searchFilter.value = newSearch || ''
+}, { immediate: true })
 
 const editForm = ref({
   id: null,
@@ -255,22 +326,51 @@ const editForm = ref({
 
 let editModal = null
 
-// Computed: Sắp xếp posts
+// Computed: Sắp xếp và Lọc posts
 const sortedPosts = computed(() => {
-  const posts = [...authStore.posts]
+  let posts = [...authStore.posts]
+
+  // Lọc theo Feed Type (Following)
+  if (feedType.value === 'following') {
+    if (!authStore.isAuthenticated) {
+      feedType.value = 'all' // Reset nếu chưa đăng nhập
+    } else {
+      posts = posts.filter(post => authStore.isFollowing(post.authorId))
+    }
+  }
   
+  // Lọc theo tìm kiếm hoặc danh mục
+  if (searchFilter.value) {
+    const query = searchFilter.value.toLowerCase().replace('#', '')
+    posts = posts.filter(post => {
+      const isCategoryMatch = post.category && post.category.toLowerCase() === query
+      const isTitleMatch = post.title.toLowerCase().includes(query)
+      const isContentMatch = post.content.toLowerCase().includes(query)
+      return isCategoryMatch || isTitleMatch || isContentMatch
+    })
+  }
+
+  // Sắp xếp
   if (sortBy.value === 'newest') {
-    return posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   } else if (sortBy.value === 'oldest') {
-    return posts.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    posts.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
   } else if (sortBy.value === 'mostLiked') {
-    return posts.sort((a, b) => 
+    posts.sort((a, b) => 
       authStore.getPostLikesCount(b.id) - authStore.getPostLikesCount(a.id)
     )
   }
   
   return posts
 })
+
+const filterByTag = (tag) => {
+  router.push({ path: '/', query: { search: tag } })
+}
+
+const clearFilter = () => {
+  router.push('/')
+}
 
 const editPost = (post) => {
   editForm.value = {
@@ -287,18 +387,18 @@ const editPost = (post) => {
   if (editModal) editModal.show()
 }
 
-const handleEditImageUpload = (event) => {
+const handleEditImageUpload = async (event) => {
   const file = event.target.files[0]
   if (file) {
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Kích thước ảnh quá lớn (tối đa 2MB)')
-      event.target.value = ''
-      return
-    }
-
     const reader = new FileReader()
-    reader.onload = (e) => {
-      editForm.value.image = e.target.result
+    reader.onload = async (e) => {
+      try {
+        const compressed = await compressImage(e.target.result, 1024, 1024, 0.7)
+        editForm.value.image = compressed
+      } catch (err) {
+        console.error('Lỗi nén ảnh:', err)
+        alert('Không thể nén ảnh: ' + file.name)
+      }
     }
     reader.readAsDataURL(file)
   }

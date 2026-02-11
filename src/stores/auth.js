@@ -6,7 +6,14 @@ export const useAuthStore = defineStore('auth', () => {
   const users = ref([])
   const posts = ref([])
   const comments = ref([])
-  const likes = ref([]) // THÊM: Lưu trữ likes
+  const likes = ref([])
+  const categories = ref([
+    'Công nghệ',
+    'Review',
+    'Học tập',
+    'Đời sống',
+    'Giải trí'
+  ])
 
   // Load dữ liệu từ localStorage khi khởi tạo
   const loadData = () => {
@@ -43,6 +50,18 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Hàm lưu an toàn có bắt lỗi QuotaExceeded
+  const saveToStorage = (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data))
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+        alert('LỖI: Bộ nhớ trình duyệt đã đầy! Bạn cần xóa bớt bài viết cũ hoặc ảnh để tiếp tục.')
+      }
+      throw e
+    }
+  }
+
   loadData()
 
   const isAuthenticated = computed(() => user.value !== null)
@@ -60,6 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
       email: userData.email,
       password: userData.password,
       avatar: userData.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name),
+      following: [], // THÊM: Danh sách ID người dùng đang theo dõi
       createdAt: new Date().toISOString()
     }
 
@@ -105,6 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
       content: postData.content,
       images: images,
       image: images.length > 0 ? images[0] : '', // Backward compatibility
+      category: postData.category || 'Chung',
       authorId: user.value.id,
       authorName: user.value.name,
       authorAvatar: user.value.avatar,
@@ -113,7 +134,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     posts.value.unshift(newPost)
-    localStorage.setItem('posts', JSON.stringify(posts.value))
+    saveToStorage('posts', posts.value)
     return newPost
   }
 
@@ -147,10 +168,11 @@ export const useAuthStore = defineStore('auth', () => {
       content: postData.content,
       images: finalImages,
       image: finalImages.length > 0 ? finalImages[0] : '',
+      category: postData.category || post.category || 'Chung',
       updatedAt: new Date().toISOString()
     }
 
-    localStorage.setItem('posts', JSON.stringify(posts.value))
+    saveToStorage('posts', posts.value)
     return posts.value[index]
   }
 
@@ -270,12 +292,54 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value
   }
 
+  // TOGGLE FOLLOW NGƯỜI DÙNG
+  const toggleFollow = (authorId) => {
+    if (!user.value) throw new Error('Bạn cần đăng nhập để theo dõi')
+    if (user.value.id === authorId) throw new Error('Bạn không thể theo dõi chính mình')
+
+    if (!user.value.following) user.value.following = []
+
+    const index = user.value.following.indexOf(authorId)
+    if (index === -1) {
+      user.value.following.push(authorId)
+    } else {
+      user.value.following.splice(index, 1)
+    }
+
+    // Cập nhật lại list users tổng để đồng bộ
+    const userIndex = users.value.findIndex(u => u.id === user.value.id)
+    if (userIndex !== -1) {
+      users.value[userIndex].following = user.value.following
+    }
+
+    localStorage.setItem('users', JSON.stringify(users.value))
+    localStorage.setItem('currentUser', JSON.stringify(user.value))
+  }
+
+  const isFollowing = (authorId) => {
+    if (!user.value || !user.value.following) return false
+    return user.value.following.includes(authorId)
+  }
+
+  // LẤY DANH SÁCH NGƯỜI DÙNG ĐANG THEO DÕI
+  const getFollowingUsers = (userId) => {
+    const targetUser = users.value.find(u => u.id === userId)
+    if (!targetUser || !targetUser.following) return []
+    return users.value.filter(u => targetUser.following.includes(u.id))
+  }
+
+  // LẤY DANH SÁCH NGƯỜI THEO DÕI (FOLLOWERS)
+  const getFollowersUsers = (userId) => {
+    return users.value.filter(u => u.following && u.following.includes(userId))
+  }
+
   return {
     user,
     users,
     posts,
     comments,
     likes,
+    categories,
     isAuthenticated,
     register,
     login,
@@ -289,6 +353,11 @@ export const useAuthStore = defineStore('auth', () => {
     toggleLike,
     isPostLiked,
     getPostLikesCount,
-    updateProfile
+    updateProfile,
+    toggleFollow,
+    toggleFollow,
+    isFollowing,
+    getFollowingUsers,
+    getFollowersUsers
   }
 })

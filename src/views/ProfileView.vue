@@ -20,220 +20,246 @@
                 alt="Avatar"
                 style="object-fit: cover;"
               >
+              <h3 class="fw-bold">{{ form.name }}</h3>
               <p class="text-muted mb-0">
                 <small>Thành viên từ {{ formatJoinDate(authStore.user.createdAt) }}</small>
               </p>
             </div>
             
-            <!-- Form cập nhật thông tin -->
-            <form @submit.prevent="handleUpdate">
-              <div class="row">
-                <div class="col-md-6 mb-3">
+            <!-- Thống kê Clickable -->
+            <div class="d-flex justify-content-around text-center mb-4">
+              <div class="stat-item cursor-pointer" @click="activeTab = 'posts'" :class="{ 'active': activeTab === 'posts' }">
+                <h4 class="mb-0 fw-bold">{{ myPosts.length }}</h4>
+                <small class="text-muted">Bài viết</small>
+              </div>
+              <div class="stat-item cursor-pointer" @click="activeTab = 'following'" :class="{ 'active': activeTab === 'following' }">
+                <h4 class="mb-0 fw-bold">{{ followingCount }}</h4>
+                <small class="text-muted">Đang theo dõi</small>
+              </div>
+              <div class="stat-item cursor-pointer" @click="activeTab = 'followers'" :class="{ 'active': activeTab === 'followers' }">
+                <h4 class="mb-0 fw-bold">{{ followersCount }}</h4>
+                <small class="text-muted">Người theo dõi</small>
+              </div>
+            </div>
+
+            <hr>
+            
+            <!-- Form cập nhật thông tin (Toggle) -->
+            <button class="btn btn-outline-secondary w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+              <i class="bi bi-pencil-square"></i> Chỉnh sửa thông tin
+            </button>
+
+            <div class="collapse" id="editProfileForm">
+              <form @submit.prevent="handleUpdate" class="mt-3">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                      <i class="bi bi-person"></i> Họ và tên <span class="text-danger">*</span>
+                    </label>
+                    <input 
+                      v-model="form.name" 
+                      type="text" 
+                      class="form-control" 
+                      required
+                      placeholder="Nhập họ và tên"
+                    >
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                      <i class="bi bi-envelope"></i> Email <span class="text-danger">*</span>
+                    </label>
+                    <input 
+                      v-model="form.email" 
+                      type="email" 
+                      class="form-control" 
+                      required
+                      placeholder="Nhập email"
+                    >
+                  </div>
+                </div>
+
+                <div class="mb-3">
                   <label class="form-label">
-                    <i class="bi bi-person"></i> Họ và tên <span class="text-danger">*</span>
+                    <i class="bi bi-image"></i> Ảnh đại diện
                   </label>
-                  <input 
-                    v-model="form.name" 
-                    type="text" 
-                    class="form-control" 
-                    required
-                    placeholder="Nhập họ và tên"
-                  >
+                  <div class="input-group">
+                    <input 
+                      type="file" 
+                      @change="handleAvatarUpload"
+                      class="form-control"
+                      accept="image/*"
+                      id="avatarInput"
+                    >
+                    <button 
+                      v-if="form.avatar && !form.avatar.includes('ui-avatars.com')" 
+                      @click="removeAvatar"
+                      class="btn btn-outline-danger" 
+                      type="button"
+                    >
+                      Xóa ảnh
+                    </button>
+                  </div>
                 </div>
 
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">
-                    <i class="bi bi-envelope"></i> Email <span class="text-danger">*</span>
-                  </label>
-                  <input 
-                    v-model="form.email" 
-                    type="email" 
-                    class="form-control" 
-                    required
-                    placeholder="Nhập email"
-                  >
-                </div>
-              </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Mật khẩu mới</label>
+                    <input 
+                      v-model="form.password" 
+                      type="password" 
+                      class="form-control"
+                      minlength="6"
+                      placeholder="Mật khẩu mới (tùy chọn)"
+                    >
+                  </div>
 
-              <div class="mb-3">
-                <label class="form-label">
-                  <i class="bi bi-image"></i> Ảnh đại diện
-                </label>
-                <div class="input-group">
-                  <input 
-                    type="file" 
-                    @change="handleAvatarUpload"
-                    class="form-control"
-                    accept="image/*"
-                    id="avatarInput"
-                  >
-                  <button 
-                    v-if="form.avatar && !form.avatar.includes('ui-avatars.com')" 
-                    @click="removeAvatar"
-                    class="btn btn-outline-danger" 
-                    type="button"
-                  >
-                    Xóa ảnh
-                  </button>
-                </div>
-                <small class="text-muted">
-                  Chọn ảnh từ máy tính (tối đa 2MB). Để trống sẽ dùng avatar mặc định.
-                </small>
-              </div>
-
-              <hr class="my-4">
-
-              <h5 class="mb-3">
-                <i class="bi bi-key"></i> Đổi mật khẩu (không bắt buộc)
-              </h5>
-
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Mật khẩu mới</label>
-                  <input 
-                    v-model="form.password" 
-                    type="password" 
-                    class="form-control"
-                    minlength="6"
-                    placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
-                  >
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Xác nhận mật khẩu</label>
+                    <input 
+                      v-model="form.confirmPassword" 
+                      type="password" 
+                      class="form-control"
+                      placeholder="Nhập lại mật khẩu mới"
+                    >
+                  </div>
                 </div>
 
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Xác nhận mật khẩu mới</label>
-                  <input 
-                    v-model="form.confirmPassword" 
-                    type="password" 
-                    class="form-control"
-                    placeholder="Nhập lại mật khẩu mới"
-                  >
-                </div>
-              </div>
+                <!-- Thông báo -->
+                <div v-if="error" class="alert alert-danger py-2 mb-3">{{ error }}</div>
+                <div v-if="success" class="alert alert-success py-2 mb-3">{{ success }}</div>
 
-              <small class="text-muted d-block mb-3">
-                * Chỉ điền vào phần này nếu bạn muốn đổi mật khẩu
-              </small>
-
-              <!-- Thông báo lỗi -->
-              <div v-if="error" class="alert alert-danger alert-dismissible fade show">
-                <i class="bi bi-exclamation-triangle"></i> {{ error }}
-                <button type="button" class="btn-close" @click="error = ''"></button>
-              </div>
-
-              <!-- Thông báo thành công -->
-              <div v-if="success" class="alert alert-success alert-dismissible fade show">
-                <i class="bi bi-check-circle"></i> {{ success }}
-                <button type="button" class="btn-close" @click="success = ''"></button>
-              </div>
-
-              <!-- Nút hành động -->
-              <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                  <i class="bi bi-check-circle"></i> Cập nhật thông tin
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="bi bi-check-circle"></i> Lưu thay đổi
                 </button>
-                <router-link to="/" class="btn btn-secondary">
-                  <i class="bi bi-arrow-left"></i> Quay lại
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs Content -->
+        <div class="card shadow">
+          <div class="card-header bg-white border-bottom-0 pb-0">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+              <li class="nav-item">
+                <button 
+                  class="nav-link" 
+                  :class="{ active: activeTab === 'posts' }"
+                  @click="activeTab = 'posts'"
+                >
+                  <i class="bi bi-file-text"></i> Bài viết
+                </button>
+              </li>
+              <li class="nav-item">
+                <button 
+                  class="nav-link" 
+                  :class="{ active: activeTab === 'following' }"
+                  @click="activeTab = 'following'"
+                >
+                  <i class="bi bi-person-check"></i> Đang theo dõi
+                </button>
+              </li>
+              <li class="nav-item">
+                <button 
+                  class="nav-link" 
+                  :class="{ active: activeTab === 'followers' }"
+                  @click="activeTab = 'followers'"
+                >
+                  <i class="bi bi-people"></i> Người theo dõi
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-body">
+            <!-- Tab: Bài viết -->
+            <div v-if="activeTab === 'posts'">
+              <div v-if="myPosts.length === 0" class="text-center py-5">
+                <p class="text-muted">Bạn chưa có bài viết nào</p>
+                <router-link to="/create-post" class="btn btn-primary btn-sm">
+                  Viết bài ngay
                 </router-link>
               </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Card bài viết của tôi -->
-        <div class="card shadow">
-          <div class="card-header bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">
-                <i class="bi bi-file-text"></i> Bài viết của tôi ({{ myPosts.length }})
-              </h5>
-              <router-link to="/create-post" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-circle"></i> Viết bài mới
-              </router-link>
-            </div>
-          </div>
-          <div class="card-body">
-            
-            <!-- Thông báo chưa có bài viết -->
-            <div v-if="myPosts.length === 0" class="text-center py-5">
-              <i class="bi bi-file-earmark-text text-muted" style="font-size: 4rem;"></i>
-              <p class="text-muted mt-3 mb-4">Bạn chưa có bài viết nào</p>
-              <router-link to="/create-post" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Viết bài viết đầu tiên
-              </router-link>
-            </div>
-
-            <!-- Danh sách bài viết -->
-            <div v-else class="list-group list-group-flush">
-              <router-link 
-                v-for="post in myPosts" 
-                :key="post.id"
-                :to="`/post/${post.id}`"
-                class="list-group-item list-group-item-action py-3"
-              >
-                <div class="d-flex justify-content-between align-items-start">
-                  <div class="flex-grow-1 me-3">
-                    <div class="d-flex align-items-center mb-2">
-                      <img 
-                        v-if="post.image" 
-                        :src="post.image" 
-                        class="rounded me-3" 
-                        width="80" 
-                        height="60" 
-                        style="object-fit: cover;"
-                        :alt="post.title"
-                      >
-                      <div>
-                        <h6 class="mb-1">{{ post.title }}</h6>
-                        <small class="text-muted">
-                          <i class="bi bi-clock"></i> {{ formatDate(post.createdAt) }}
-                        </small>
-                        <br>
-                        <small class="text-muted">
-                          <i class="bi bi-chat-dots"></i> {{ getCommentsCount(post.id) }} bình luận
-                        </small>
-                      </div>
+              <div v-else class="list-group list-group-flush">
+                <router-link 
+                  v-for="post in myPosts" 
+                  :key="post.id"
+                  :to="`/post/${post.id}`"
+                  class="list-group-item list-group-item-action py-3 px-0 border-bottom"
+                >
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1 text-dark">{{ post.title }}</h6>
+                      <small class="text-muted">
+                        {{ formatDate(post.createdAt) }} • {{ getCommentsCount(post.id) }} bình luận
+                      </small>
                     </div>
-                    <p class="mb-0 text-muted small">
-                      {{ truncateText(post.content, 100) }}
-                    </p>
+                    <i class="bi bi-chevron-right text-muted small"></i>
                   </div>
-                  <i class="bi bi-chevron-right text-muted"></i>
-                </div>
-              </router-link>
+                </router-link>
+              </div>
             </div>
+
+            <!-- Tab: Đang theo dõi -->
+            <div v-if="activeTab === 'following'">
+              <div v-if="followingList.length === 0" class="text-center py-5">
+                <p class="text-muted">Bạn chưa theo dõi ai</p>
+                <router-link to="/" class="btn btn-outline-primary btn-sm">
+                  Khám phá bài viết
+                </router-link>
+              </div>
+              <div v-else class="list-group list-group-flush">
+                <div 
+                  v-for="user in followingList" 
+                  :key="user.id" 
+                  class="list-group-item px-0 py-3 d-flex align-items-center justify-content-between"
+                >
+                  <div class="d-flex align-items-center">
+                    <img :src="user.avatar" class="rounded-circle me-3 border" width="48" height="48" alt="Avatar">
+                    <div>
+                      <h6 class="mb-0">{{ user.name }}</h6>
+                      <small class="text-muted">Thành viên</small>
+                    </div>
+                  </div>
+                  <button @click="authStore.toggleFollow(user.id)" class="btn btn-outline-secondary btn-sm">
+                    Bỏ theo dõi
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Người theo dõi -->
+            <div v-if="activeTab === 'followers'">
+              <div v-if="followersList.length === 0" class="text-center py-5">
+                <p class="text-muted">Chưa có ai theo dõi bạn</p>
+              </div>
+              <div v-else class="list-group list-group-flush">
+                <div 
+                  v-for="user in followersList" 
+                  :key="user.id" 
+                  class="list-group-item px-0 py-3 d-flex align-items-center justify-content-between"
+                >
+                  <div class="d-flex align-items-center">
+                    <img :src="user.avatar" class="rounded-circle me-3 border" width="48" height="48" alt="Avatar">
+                    <div>
+                      <h6 class="mb-0">{{ user.name }}</h6>
+                      <small class="text-muted">Thành viên</small>
+                    </div>
+                  </div>
+                  <button 
+                    @click="authStore.toggleFollow(user.id)" 
+                    class="btn btn-sm"
+                    :class="authStore.isFollowing(user.id) ? 'btn-outline-secondary' : 'btn-primary'"
+                  >
+                    {{ authStore.isFollowing(user.id) ? 'Đang theo dõi' : 'Theo dõi lại' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- Card thống kê -->
-        <div class="row mt-4">
-          <div class="col-md-4 mb-3">
-            <div class="card text-center shadow-sm">
-              <div class="card-body">
-                <i class="bi bi-file-text text-primary" style="font-size: 2rem;"></i>
-                <h3 class="mt-2 mb-0">{{ myPosts.length }}</h3>
-                <p class="text-muted mb-0">Bài viết</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 mb-3">
-            <div class="card text-center shadow-sm">
-              <div class="card-body">
-                <i class="bi bi-chat-dots text-success" style="font-size: 2rem;"></i>
-                <h3 class="mt-2 mb-0">{{ myCommentsCount }}</h3>
-                <p class="text-muted mb-0">Bình luận</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 mb-3">
-            <div class="card text-center shadow-sm">
-              <div class="card-body">
-                <i class="bi bi-calendar-check text-info" style="font-size: 2rem;"></i>
-                <h3 class="mt-2 mb-0">{{ daysSinceJoined }}</h3>
-                <p class="text-muted mb-0">Ngày tham gia</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -242,6 +268,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { compressImage } from '../utils/imageHelper'
 
 const authStore = useAuthStore()
 
@@ -258,6 +285,9 @@ const form = ref({
 const error = ref('')
 const success = ref('')
 
+// Tab state
+const activeTab = ref('posts')
+
 // Computed: Lấy bài viết của user hiện tại
 const myPosts = computed(() => {
   return authStore.posts.filter(p => p.authorId === authStore.user?.id)
@@ -267,6 +297,21 @@ const myPosts = computed(() => {
 const myCommentsCount = computed(() => {
   return authStore.comments.filter(c => c.authorId === authStore.user?.id).length
 })
+
+// Computed: Danh sách người đang theo dõi
+const followingList = computed(() => {
+  if (!authStore.user) return []
+  return authStore.getFollowingUsers(authStore.user.id)
+})
+
+// Computed: Danh sách người theo dõi
+const followersList = computed(() => {
+  if (!authStore.user) return []
+  return authStore.getFollowersUsers(authStore.user.id)
+})
+
+const followingCount = computed(() => followingList.value.length)
+const followersCount = computed(() => followersList.value.length)
 
 // Computed: Tính số ngày đã tham gia
 const daysSinceJoined = computed(() => {
@@ -323,15 +368,15 @@ const getCommentsCount = (postId) => {
 const handleAvatarUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
-    if (file.size > 2 * 1024 * 1024) { // Limit 2MB
-      error.value = 'Kích thước ảnh quá lớn (tối đa 2MB)'
-      event.target.value = '' // Reset input
-      return
-    }
-
     const reader = new FileReader()
-    reader.onload = (e) => {
-      form.value.avatar = e.target.result
+    reader.onload = async (e) => {
+      try {
+        const compressed = await compressImage(e.target.result, 300, 300, 0.7)
+        form.value.avatar = compressed
+      } catch (err) {
+        console.error('Lỗi nén ảnh:', err)
+        error.value = 'Không thể nén ảnh đại diện'
+      }
     }
     reader.readAsDataURL(file)
   }

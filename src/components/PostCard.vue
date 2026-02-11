@@ -18,7 +18,10 @@
     </div>
     
     <div class="card-body">
-      <h5 class="card-title fw-bold">{{ post.title }}</h5>
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h5 class="card-title fw-bold mb-0">{{ post.title }}</h5>
+        <span v-if="post.category" class="badge bg-info text-dark small">{{ post.category }}</span>
+      </div>
       <p class="card-text text-muted">{{ truncateContent(post.content, 150) }}</p>
       
       <div class="d-flex align-items-center mb-3">
@@ -31,7 +34,13 @@
         >
         <div class="flex-grow-1">
           <strong class="d-block">{{ post.authorName }}</strong>
-          <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
+          <div class="d-flex align-items-center gap-2">
+            <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
+            <span class="text-muted small">•</span>
+            <small class="text-muted">
+              <i class="bi bi-book"></i> {{ readingTime }} phút đọc
+            </small>
+          </div>
         </div>
       </div>
 
@@ -118,6 +127,13 @@ const isLiked = computed(() => {
 // Computed: Đếm số comments (bao gồm cả replies)
 const commentsCount = computed(() => {
   return authStore.comments.filter(c => c.postId === props.post.id).length
+})
+
+// Computed: Tính thời gian đọc (giả sử 200 từ/phút)
+const readingTime = computed(() => {
+  const words = props.post.content.trim().split(/\s+/).length
+  const time = Math.ceil(words / 200)
+  return time < 1 ? 1 : time
 })
 
 const truncateContent = (text, length) => {

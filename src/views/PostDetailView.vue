@@ -16,7 +16,17 @@
                 :alt="post.authorName"
               >
               <div class="flex-grow-1">
-                <strong class="d-block fs-5">{{ post.authorName }}</strong>
+                <strong class="d-block fs-5">
+                  {{ post.authorName }}
+                  <button 
+                    v-if="authStore.user && authStore.user.id !== post.authorId" 
+                    @click="handleToggleFollow" 
+                    class="btn btn-sm ms-2 py-0 px-2"
+                    :class="authStore.isFollowing(post.authorId) ? 'btn-outline-secondary' : 'btn-primary'"
+                  >
+                    {{ authStore.isFollowing(post.authorId) ? 'Đang theo dõi' : 'Theo dõi' }}
+                  </button>
+                </strong>
                 <small class="text-muted">
                   <i class="bi bi-clock"></i> {{ formatDate(post.createdAt) }}
                 </small>
@@ -87,9 +97,7 @@
             </div>
 
             <!-- Nội dung bài viết -->
-            <div class="post-content mb-4">
-              {{ post.content }}
-            </div>
+            <div class="post-content mb-4" v-html="renderMarkdown(post.content)"></div>
 
             <!-- Like & Stats -->
             <div class="post-actions-detail border-top border-bottom py-3">
@@ -112,6 +120,9 @@
                 >
                   <i class="bi" :class="isLiked ? 'bi-heart-fill' : 'bi-heart'"></i>
                   {{ isLiked ? 'Đã thích' : 'Thích' }}
+                </button>
+                <button @click="sharePost" class="btn btn-lg btn-outline-primary flex-grow-1">
+                  <i class="bi bi-share"></i> Chia sẻ
                 </button>
               </div>
             </div>
@@ -393,6 +404,50 @@ const handleLike = () => {
   } catch (error) {
     alert(error.message)
   }
+}
+
+const handleToggleFollow = () => {
+  try {
+    authStore.toggleFollow(post.value.authorId)
+  } catch (error) {
+    alert(error.message)
+  }
+}
+
+const sharePost = () => {
+  const url = window.location.href
+  navigator.clipboard.writeText(url).then(() => {
+    alert('Đã sao chép liên kết vào bộ nhớ tạm!')
+  }).catch(err => {
+    console.error('Không thể sao chép: ', err)
+  })
+}
+
+const renderMarkdown = (text) => {
+  if (!text) return ''
+  
+  // Escape HTML đầu tiên để tránh XSS
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+  // Định dạng Bold: **text**
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  
+  // Định dạng Italic: *text*
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
+  
+  // Định dạng Inline Code: `text`
+  html = html.replace(/`(.*?)`/g, '<code class="bg-light px-1 rounded">$1</code>')
+  
+  // Định dạng Links: [text](url)
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+
+  // Xử lý xuống dòng
+  return html.replace(/\n/g, '<br>')
 }
 
 const editPost = () => {

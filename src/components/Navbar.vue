@@ -10,7 +10,22 @@
       </button>
       
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+        <!-- Thanh tìm kiếm -->
+        <form @submit.prevent="handleSearch" class="d-flex ms-auto me-3 my-2 my-lg-0 search-form">
+          <div class="input-group">
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              class="form-control" 
+              placeholder="Tìm kiếm bài viết..."
+            >
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </form>
+
+        <ul class="navbar-nav">
           <li class="nav-item">
             <router-link to="/" class="nav-link">
               <i class="bi bi-house"></i> Trang chủ
@@ -48,6 +63,13 @@
             </li>
           </template>
 
+          <!-- Dark Mode Toggle -->
+          <li class="nav-item">
+            <button @click="toggleTheme" class="btn btn-link nav-link" :title="isDark ? 'Chế độ sáng' : 'Chế độ tối'">
+              <i class="bi" :class="isDark ? 'bi-sun-fill text-warning' : 'bi-moon-fill text-info'"></i>
+            </button>
+          </li>
+
           <!-- Nút Reset Data - Chỉ dùng khi develop -->
           <li class="nav-item">
             <button 
@@ -65,11 +87,35 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+const searchQuery = ref('')
+const isDark = ref(false)
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme') || 'light'
+  isDark.value = savedTheme === 'dark'
+  document.documentElement.setAttribute('data-theme', savedTheme)
+})
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  const theme = isDark.value ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-theme', theme)
+  localStorage.setItem('theme', theme)
+}
+
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ path: '/', query: { search: searchQuery.value.trim() } })
+    searchQuery.value = ''
+  }
+}
 
 const handleLogout = () => {
   authStore.logout()

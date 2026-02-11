@@ -28,6 +28,18 @@
 
                 <div class="mb-4">
                   <label class="form-label fw-bold">
+                    <i class="bi bi-grid"></i> Danh mục <span class="text-danger">*</span>
+                  </label>
+                  <select v-model="form.category" class="form-select" required>
+                    <option value="" disabled>-- Chọn danh mục --</option>
+                    <option v-for="cat in authStore.categories" :key="cat" :value="cat">
+                      {{ cat }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="mb-4">
+                  <label class="form-label fw-bold">
                     <i class="bi bi-file-text"></i> Nội dung <span class="text-danger">*</span>
                   </label>
                   <textarea 
@@ -97,7 +109,14 @@
               </h5>
               <ul class="mb-0">
                 <li class="mb-2">Tiêu đề ngắn gọn, súc tích và thu hút</li>
-                <li class="mb-2">Nội dung rõ ràng, dễ hiểu</li>
+                <li class="mb-2">Nội dung rõ ràng, hỗ trợ Markdown cơ bản:
+                  <ul class="small text-muted">
+                    <li>**Chữ đậm**</li>
+                    <li>*Chữ nghiêng*</li>
+                    <li>[Tên link](url)</li>
+                    <li>`code block`</li>
+                  </ul>
+                </li>
                 <li class="mb-2">Sử dụng hình ảnh chất lượng cao</li>
                 <li class="mb-2">Chia sẻ kinh nghiệm thực tế</li>
                 <li>Tương tác với người đọc qua bình luận</li>
@@ -111,38 +130,70 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { compressImage } from '../utils/imageHelper'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const form = ref({
   title: '',
+  category: '',
   content: '',
-  images: [] // Changed from image: ''
+  images: []
 })
 
-const handleImageUpload = (event) => {
+// Khôi phục bản nháp nếu có
+onMounted(() => {
+  try {
+    const savedDraft = localStorage.getItem('post_draft')
+    if (savedDraft) {
+      const draft = JSON.parse(savedDraft)
+      if (confirm('Bạn có một bài viết đang viết dở. Bạn có muốn khôi phục không?')) {
+        form.value = draft
+      } else {
+        localStorage.removeItem('post_draft')
+      }
+    }
+  } catch (e) {
+    console.error('Lỗi khi đọc bản nháp:', e)
+  }
+})
+
+// Tự động lưu bản nháp khi form thay đổi
+watch(form, async (newVal) => {
+  if (newVal.title || newVal.content || newVal.images.length > 0) {
+    try {
+      localStorage.setItem('post_draft', JSON.stringify(newVal))
+    } catch (e) {
+      console.warn('Không thể lưu bản nháp: Bộ nhớ đầy')
+      // Nếu là lỗi bộ nhớ, không hiển thị alert gây phiền người dùng lúc đang gõ
+    }
+  }
+}, { deep: true })
+
+const handleImageUpload = async (event) => {
   const files = event.target.files
   if (files && files.length > 0) {
     for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        // Check size of each file
-        if (file.size > 2 * 1024 * 1024) { 
-           alert(`File ${file.name} quá lớn (tối đa 2MB). Đã bỏ qua.`)
-           continue
-        }
-
+        
         const reader = new FileReader()
-        reader.onload = (e) => {
-          form.value.images.push(e.target.result)
+        reader.onload = async (e) => {
+          try {
+            // Nén ảnh trước khi lưu
+            const compressed = await compressImage(e.target.result, 1024, 1024, 0.7)
+            form.value.images.push(compressed)
+          } catch (err) {
+            console.error('Lỗi nén ảnh:', err)
+            alert('Không thể nén ảnh: ' + file.name)
+          }
         }
         reader.readAsDataURL(file)
     }
   }
-  // Clear input to allow re-upload of same files if needed (though multi-file inputs are tricky with re-selection, this is generally safe)
   event.target.value = ''
 }
 
@@ -153,6 +204,8 @@ const removeImage = (index) => {
 const handleSubmit = () => {
   try {
     authStore.createPost(form.value)
+    // Xóa bản nháp sau khi đăng bài thành công
+    localStorage.removeItem('post_draft')
     alert('Đăng bài viết thành công!')
     router.push('/')
   } catch (error) {
