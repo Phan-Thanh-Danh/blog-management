@@ -436,6 +436,10 @@ const handleUpdate = () => {
     setTimeout(() => {
       success.value = ''
     }, 3000)
+  } catch (err) {
+    error.value = err.message
+  }
+}
 
 // Xử lý xóa bài viết
 const handleDeletePost = (postId) => {
