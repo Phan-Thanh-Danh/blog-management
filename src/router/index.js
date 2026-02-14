@@ -19,12 +19,7 @@ const router = createRouter({
       name: 'register',
       component: () => import('../views/RegisterView.vue')
     },
-    {
-      path: '/create-post',
-      name: 'create-post',
-      component: () => import('../views/CreatePostView.vue'),
-      meta: { requiresAuth: true }
-    },
+
     {
       path: '/post/:id',
       name: 'post-detail',
@@ -42,7 +37,7 @@ const router = createRouter({
 // Navigation Guard
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else {

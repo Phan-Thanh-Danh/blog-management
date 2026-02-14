@@ -13,9 +13,9 @@
               <router-link v-if="!authStore.isAuthenticated" to="/register" class="btn btn-light rounded-pill px-4 shadow-sm">
                 Bắt đầu ngay
               </router-link>
-              <router-link v-else to="/create-post" class="btn btn-light rounded-pill px-4 shadow-sm">
+              <button v-else @click="openCreateModal" class="btn btn-light rounded-pill px-4 shadow-sm">
                 Viết bài mới
-              </router-link>
+              </button>
             </div>
           </div>
         </div>
@@ -84,9 +84,9 @@
                 Khám phá tất cả bài viết
               </button>
             </div>
-            <router-link v-else-if="authStore.isAuthenticated" to="/create-post" class="btn btn-primary btn-lg rounded-pill">
+            <button v-else-if="authStore.isAuthenticated" @click="openCreateModal" class="btn btn-primary btn-lg rounded-pill">
               <i class="bi bi-plus-circle"></i> Viết bài đầu tiên
-            </router-link>
+            </button>
           </div>
 
           <!-- Posts List -->
@@ -112,82 +112,58 @@
       </div>
     </div>
 
-    <!-- Modal chỉnh sửa bài viết -->
-    <div class="modal fade" id="editModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-pencil"></i> Chỉnh sửa bài viết
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="updatePost">
-              <div class="mb-3">
-                <label class="form-label fw-bold">Tiêu đề</label>
-                <input v-model="editForm.title" type="text" class="form-control" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">Nội dung</label>
-                <Editor v-model="editForm.content" :height="400" />
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">Hình ảnh minh họa</label>
-                <input 
-                  type="file" 
-                  @change="handleEditImageUpload"
-                  class="form-control mb-2"
-                  accept="image/*"
-                >
-                <div v-if="editForm.image" class="position-relative d-inline-block">
-                  <img :src="editForm.image" class="img-fluid rounded" style="max-height: 200px;" alt="Preview">
-                  <button 
-                    @click="removeEditImage" 
-                    type="button" 
-                    class="btn btn-danger btn-sm position-absolute top-0 end-0"
-                    style="transform: translate(50%, -50%); padding: 0.1rem 0.3rem;"
-                  >
-                    &times;
-                  </button>
-                </div>
-              </div>
-              <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                  <i class="bi bi-check-circle"></i> Cập nhật
-                </button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                  <i class="bi bi-x-circle"></i> Hủy
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Post Modal (Create/Edit) -->
+    <PostModal 
+      ref="postModalRef"
+      :mode="modalMode"
+      :initial-data="selectedPost"
+      @saved="handlePostSaved"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import PostCard from '../components/PostCard.vue'
-import Editor from '../components/Editor.vue'
-import { Modal } from 'bootstrap'
-import { compressImage } from '../utils/imageHelper'
+import PostModal from '../components/PostModal.vue'
 
 const route = useRoute()
-const router = useRouter()
 const authStore = useAuthStore()
 
 const sortBy = ref('newest')
 const searchFilter = ref('')
 const feedType = ref('all') // 'all' | 'following'
 
+// Modal state
+const postModalRef = ref(null)
+const modalMode = ref('create')
+const selectedPost = ref({})
+
+const openCreateModal = () => {
+  modalMode.value = 'create'
+  selectedPost.value = {}
+  postModalRef.value?.show()
+}
+
+const handlePostSaved = () => {
+  // PostCard or Store usually handles refreshing if needed
+}
+
 // Watch query search để cập nhật filter
 watch(() => route.query.search, (newSearch) => {
   searchFilter.value = newSearch || ''
+}, { immediate: true })
+
+// Watch for global create action from Navbar
+watch(() => route.query.action, (action) => {
+  if (action === 'create' && authStore.isAuthenticated) {
+    openCreateModal()
+    // Clear query after opening to prevent re-opening on refresh if not intended
+    // Actually, maybe keep it. But let's clean it up for better UX.
+    router.replace({ path: '/', query: { ...route.query, action: undefined } })
+  }
 }, { immediate: true })
 
 const editForm = ref({
@@ -252,60 +228,19 @@ const clearFilter = () => {
 }
 
 const editPost = (post) => {
-  editForm.value = {
-    id: post.id,
-    title: post.title,
-    content: post.content,
-    image: post.image
-  }
-  
-  if (!editModal) {
-    const modalEl = document.getElementById('editModal')
-    if (modalEl) editModal = new Modal(modalEl)
-  }
-  if (editModal) editModal.show()
-}
-
-const handleEditImageUpload = async (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      try {
-        const compressed = await compressImage(e.target.result, 1024, 1024, 0.7)
-        editForm.value.image = compressed
-      } catch (err) {
-        console.error('Lỗi nén ảnh:', err)
-        alert('Không thể nén ảnh: ' + file.name)
-      }
-    }
-    reader.readAsDataURL(file)
-  }
-}
-
-const removeEditImage = () => {
-  editForm.value.image = ''
-  // Try to clear input if currently in DOM
-  const fileInput = document.querySelector('#editModal input[type="file"]')
-  if (fileInput) fileInput.value = ''
-}
-
-const updatePost = () => {
-  try {
-    authStore.updatePost(editForm.value.id, editForm.value)
-    editModal.hide()
-    alert('Cập nhật bài viết thành công!')
-  } catch (error) {
-    alert(error.message)
-  }
+  modalMode.value = 'edit'
+  selectedPost.value = post
+  postModalRef.value?.show()
 }
 
 const deletePost = (postId) => {
-  try {
-    authStore.deletePost(postId)
-    alert('Xóa bài viết thành công!')
-  } catch (error) {
-    alert(error.message)
+  if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+    try {
+      authStore.deletePost(postId)
+      alert('Xóa bài viết thành công!')
+    } catch (error) {
+      alert(error.message)
+    }
   }
 }
 </script>

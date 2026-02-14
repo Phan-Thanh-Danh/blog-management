@@ -73,9 +73,9 @@
         <ul class="navbar-nav align-items-center">
           <template v-if="authStore.isAuthenticated">
             <li class="nav-item me-2">
-              <router-link to="/create-post" class="btn btn-primary btn-sm rounded-pill px-3">
+              <button @click="navigateTo('home-create')" class="btn btn-primary btn-sm rounded-pill px-3">
                 <i class="bi bi-plus-lg"></i> Đăng bài
-              </router-link>
+              </button>
             </li>
             <li class="nav-item dropdown">
               <button 
@@ -150,6 +150,8 @@ const navigateTo = (pathOrTag) => {
   activeDropdown.value = null
   if (pathOrTag === 'profile') {
     router.push('/profile')
+  } else if (pathOrTag === 'home-create') {
+    router.push({ path: '/', query: { action: 'create' } })
   } else {
     router.push({ path: '/', query: { search: pathOrTag } })
   }

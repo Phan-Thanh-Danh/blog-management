@@ -155,13 +155,13 @@
 
         <!-- Middle Column: Feed -->
         <div class="col-lg-7 col-xl-8 order-1 order-lg-2">
-          <!-- Post Composer (Placeholder-ish or actual) -->
+          <!-- Post Composer (Facebook Style Shortcut) -->
           <div v-if="isMyProfile" class="card shadow-sm border-0 mb-4 p-3">
             <div class="d-flex align-items-center gap-3">
-              <img :src="authStore.user.avatar" class="rounded-circle border" width="40" height="40">
-              <router-link to="/create-post" class="flex-grow-1 bg-light rounded-pill px-4 py-2 text-muted text-decoration-none hover-bg-gray">
+              <img :src="authStore.user.avatar" class="rounded-circle border" width="40" height="40" style="object-fit: cover;">
+              <button @click="openCreateModal" class="flex-grow-1 btn btn-light rounded-pill px-4 py-2 text-muted text-start border-0 shadow-none hover-bg-gray">
                 {{ authStore.user.name }} ơi, bạn đang nghĩ gì thế?
-              </router-link>
+              </button>
             </div>            
           </div>
 
@@ -179,13 +179,14 @@
                 <i class="bi bi-file-earmark-text display-4 text-muted mb-3"></i>
                 <h5>Bạn chưa có bài viết nào</h5>
                 <p class="text-muted">Chia sẻ những câu chuyện của bạn ngay bây giờ!</p>
-                <router-link to="/create-post" class="btn btn-primary px-4">Viết bài ngay</router-link>
+                <button @click="openCreateModal" class="btn btn-primary px-4">Viết bài ngay</button>
             </div>
             <div v-else>
                 <PostCard 
                   v-for="post in myPosts" 
                   :key="post.id" 
                   :post="post"
+                  @edit="openEditModal"
                   @delete="handleDeletePost"
                 />
             </div>
@@ -296,6 +297,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Post Modal (Create/Edit) -->
+    <PostModal 
+      ref="postModalRef"
+      :mode="modalMode"
+      :initial-data="selectedPost"
+      @saved="() => {}"
+    />
   </div>
 </template>
 
@@ -304,8 +313,26 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { compressImage } from '../utils/imageHelper'
 import PostCard from '../components/PostCard.vue'
+import PostModal from '../components/PostModal.vue'
 
 const authStore = useAuthStore()
+
+// Modal state
+const postModalRef = ref(null)
+const modalMode = ref('create')
+const selectedPost = ref({})
+
+const openCreateModal = () => {
+  modalMode.value = 'create'
+  selectedPost.value = {}
+  postModalRef.value?.show()
+}
+
+const openEditModal = (post) => {
+  modalMode.value = 'edit'
+  selectedPost.value = post
+  postModalRef.value?.show()
+}
 
 // File inputs refs
 const avatarInput = ref(null)
