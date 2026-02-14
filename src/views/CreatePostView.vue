@@ -42,14 +42,11 @@
                   <label class="form-label fw-bold">
                     <i class="bi bi-file-text"></i> Nội dung <span class="text-danger">*</span>
                   </label>
-                  <textarea 
+                  <Editor 
                     v-model="form.content" 
-                    class="form-control" 
-                    rows="12" 
-                    required
-                    placeholder="Chia sẻ suy nghĩ của bạn..."
-                  ></textarea>
-                  <small class="text-muted">{{ form.content.length }} ký tự</small>
+                    :height="400"
+                  />
+                  <small class="text-muted">{{ form.content ? form.content.length : 0 }} ký tự</small>
                 </div>
 
                 <div class="mb-4">
@@ -134,6 +131,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { compressImage } from '../utils/imageHelper'
+import Editor from '../components/Editor.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

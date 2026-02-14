@@ -137,8 +137,15 @@ const readingTime = computed(() => {
 })
 
 const truncateContent = (text, length) => {
-  if (text.length <= length) return text
-  return text.substring(0, length) + '...'
+  if (!text) return ''
+  // Strip HTML tags using a temporary element or regex
+  // Using regex for simplicity and performance in this context, 
+  // though temporary element is safer for complex HTML structure decoding.
+  // Given we just need a plain text preview:
+  const strippedText = text.replace(/<[^>]*>?/gm, '')
+  
+  if (strippedText.length <= length) return strippedText
+  return strippedText.substring(0, length) + '...'
 }
 
 const formatDate = (dateString) => {

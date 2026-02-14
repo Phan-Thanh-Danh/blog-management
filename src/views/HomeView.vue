@@ -258,7 +258,7 @@
               </div>
               <div class="mb-3">
                 <label class="form-label fw-bold">Nội dung</label>
-                <textarea v-model="editForm.content" class="form-control" rows="8" required></textarea>
+                <Editor v-model="editForm.content" :height="400" />
               </div>
               <div class="mb-3">
                 <label class="form-label fw-bold">Hình ảnh minh họa</label>
@@ -301,6 +301,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import PostCard from '../components/PostCard.vue'
+import Editor from '../components/Editor.vue'
 import { Modal } from 'bootstrap'
 import { compressImage } from '../utils/imageHelper'
 

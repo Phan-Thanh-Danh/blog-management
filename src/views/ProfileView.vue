@@ -181,22 +181,29 @@
                 </router-link>
               </div>
               <div v-else class="list-group list-group-flush">
-                <router-link 
+                <div 
                   v-for="post in myPosts" 
                   :key="post.id"
-                  :to="`/post/${post.id}`"
-                  class="list-group-item list-group-item-action py-3 px-0 border-bottom"
+                  class="list-group-item py-3 px-0 border-bottom"
                 >
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <router-link :to="`/post/${post.id}`" class="flex-grow-1 text-decoration-none">
                       <h6 class="mb-1 text-dark">{{ post.title }}</h6>
                       <small class="text-muted">
                         {{ formatDate(post.createdAt) }} • {{ getCommentsCount(post.id) }} bình luận
                       </small>
+                    </router-link>
+                    <div class="ms-3">
+                      <button 
+                        @click.stop="handleDeletePost(post.id)" 
+                        class="btn btn-outline-danger btn-sm"
+                        title="Xóa bài viết"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </div>
-                    <i class="bi bi-chevron-right text-muted small"></i>
                   </div>
-                </router-link>
+                </div>
               </div>
             </div>
 
@@ -430,10 +437,18 @@ const handleUpdate = () => {
       success.value = ''
     }, 3000)
 
-    // Scroll to top để user thấy thông báo
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  } catch (err) {
-    error.value = err.message
+// Xử lý xóa bài viết
+const handleDeletePost = (postId) => {
+  if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+    try {
+      authStore.deletePost(postId)
+      success.value = 'Xóa bài viết thành công!'
+      setTimeout(() => {
+        success.value = ''
+      }, 3000)
+    } catch (err) {
+      error.value = err.message
+    }
   }
 }
 </script>

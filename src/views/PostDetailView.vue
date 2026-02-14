@@ -97,7 +97,7 @@
             </div>
 
             <!-- Nội dung bài viết -->
-            <div class="post-content mb-4" v-html="renderMarkdown(post.content)"></div>
+            <div class="post-content mb-4" v-html="post.content"></div>
 
             <!-- Like & Stats -->
             <div class="post-actions-detail border-top border-bottom py-3">
@@ -226,7 +226,7 @@
               </div>
               <div class="mb-3">
                 <label class="form-label">Nội dung</label>
-                <textarea v-model="editForm.content" class="form-control" rows="8" required></textarea>
+                <Editor v-model="editForm.content" :height="400" />
               </div>
               <div class="mb-3">
                 <label class="form-label">Hình ảnh minh họa</label>
@@ -279,6 +279,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import CommentItem from '../components/CommentItem.vue'
+import Editor from '../components/Editor.vue'
 import { Modal } from 'bootstrap'
 
 const route = useRoute()
