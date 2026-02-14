@@ -22,7 +22,8 @@ export const useAuthStore = defineStore('auth', () => {
     const text = html.replace(/<[^>]*>?/gm, '')
     // Tìm các từ bắt đầu bằng dấu #
     const hashtags = text.match(/#[\w\u00C0-\u1EF9]+/g) || []
-    return [...new Set(hashtags)] // Bỏ trùng lặp
+    // Bỏ dấu # ở đầu mỗi tag để tránh lặp (##tag) và bỏ trùng lặp
+    return [...new Set(hashtags.map(tag => tag.substring(1)))]
   }
 
   // Lấy danh sách Hashtag thịnh hành (Top 10)

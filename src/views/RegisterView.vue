@@ -1,127 +1,134 @@
 <template>
-  <div class="auth-wrapper">
-    <div class="container py-5">
-      <div class="row justify-content-center align-items-center min-vh-100">
-        <div class="col-md-10 col-lg-8">
-          <div class="row shadow-lg rounded-4 overflow-hidden bg-white">
-            <!-- Left Side - Image -->
-            <div class="col-md-6 d-none d-md-block p-0">
-              <div class="auth-side-panel h-100 d-flex align-items-center justify-content-center">
-                <div class="text-center text-white p-5">
-                  <i class="bi bi-people" style="font-size: 5rem; opacity: 0.9;"></i>
-                  <h3 class="mt-4 fw-bold">Tham gia ngay hôm nay!</h3>
-                  <p class="lead">Trở thành thành viên của cộng đồng</p>
-                  <div class="mt-4">
-                    <i class="bi bi-star me-2"></i> Hoàn toàn miễn phí<br>
-                    <i class="bi bi-star me-2"></i> Không giới hạn bài viết<br>
-                    <i class="bi bi-star me-2"></i> Kết nối với mọi người
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right Side - Form -->
-            <div class="col-md-6 p-5">
-              <div class="text-center mb-4">
-                <i class="bi bi-person-plus-fill text-primary" style="font-size: 3rem;"></i>
-                <h2 class="fw-bold mt-3">Đăng ký tài khoản</h2>
-                <p class="text-muted">Tạo tài khoản để bắt đầu</p>
-              </div>
-              
-              <form @submit.prevent="handleRegister">
-                <div class="mb-3">
-                  <label class="form-label fw-bold">
-                    <i class="bi bi-person"></i> Họ và tên
-                  </label>
-                  <input 
-                    v-model="form.name" 
-                    type="text" 
-                    class="form-control form-control-lg" 
-                    required
-                    placeholder="Nguyễn Văn A"
-                  >
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">
-                    <i class="bi bi-envelope"></i> Email
-                  </label>
-                  <input 
-                    v-model="form.email" 
-                    type="email" 
-                    class="form-control form-control-lg" 
-                    required
-                    placeholder="example@email.com"
-                  >
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">
-                    <i class="bi bi-lock"></i> Mật khẩu
-                  </label>
-                  <div class="input-group">
-                    <input 
-                      v-model="form.password" 
-                      :type="showPassword ? 'text' : 'password'"
-                      class="form-control form-control-lg" 
-                      required
-                      minlength="6"
-                      placeholder="Tối thiểu 6 ký tự"
-                    >
-                    <button 
-                      @click="showPassword = !showPassword"
-                      class="btn btn-outline-secondary" 
-                      type="button"
-                    >
-                      <i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
-                    </button>
-                  </div>
-                  <div class="password-strength mt-2">
-                    <div class="progress" style="height: 5px;">
-                      <div 
-                        class="progress-bar" 
-                        :class="passwordStrengthClass"
-                        :style="{ width: passwordStrength + '%' }"
-                      ></div>
-                    </div>
-                    <small class="text-muted">{{ passwordStrengthText }}</small>
-                  </div>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">
-                    <i class="bi bi-shield-check"></i> Xác nhận mật khẩu
-                  </label>
-                  <input 
-                    v-model="form.confirmPassword" 
-                    type="password" 
-                    class="form-control form-control-lg" 
-                    required
-                    placeholder="Nhập lại mật khẩu"
-                  >
-                </div>
-
-                <div v-if="error" class="alert alert-danger alert-dismissible fade show">
-                  <i class="bi bi-exclamation-triangle"></i> {{ error }}
-                  <button type="button" class="btn-close" @click="error = ''"></button>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
-                  <i class="bi bi-person-plus"></i> Đăng ký
-                </button>
-
-                <div class="text-center">
-                  <p class="text-muted mb-0">
-                    Đã có tài khoản? 
-                    <router-link to="/login" class="text-primary fw-bold text-decoration-none">
-                      Đăng nhập ngay
-                    </router-link>
-                  </p>
-                </div>
-              </form>
+  <div class="fb-register-page bg-fb-gray min-vh-100 d-flex flex-column align-items-center justify-content-center py-5">
+    <div class="mb-4">
+      <h1 class="fb-logo fw-bold text-primary" style="font-size: 3.5rem; letter-spacing: -1.5px;">facebook</h1>
+    </div>
+    
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden bg-white" style="max-width: 432px; width: 100%;">
+      <div class="card-header bg-white border-bottom p-3">
+        <h2 class="fw-bold fs-3 mb-0">Đăng ký</h2>
+        <p class="text-muted small mb-0">Nhanh chóng và dễ dàng.</p>
+      </div>
+      
+      <div class="card-body p-3">
+        <form @submit.prevent="handleRegister">
+          <div class="row g-2 mb-3">
+            <div class="col-12">
+              <input 
+                v-model="form.name" 
+                type="text" 
+                class="form-control bg-light-gray x-small-padding" 
+                required
+                placeholder="Họ và tên"
+              >
             </div>
           </div>
-        </div>
+
+          <div class="mb-3">
+            <input 
+              v-model="form.email" 
+              type="email" 
+              class="form-control bg-light-gray x-small-padding" 
+              required
+              placeholder="Số di động hoặc email"
+            >
+          </div>
+
+          <div class="mb-3">
+            <input 
+              v-model="form.password" 
+              :type="showPassword ? 'text' : 'password'"
+              class="form-control bg-light-gray x-small-padding" 
+              required
+              minlength="6"
+              placeholder="Mật khẩu mới"
+            >
+            <div class="password-strength mt-2 px-1">
+              <div class="progress" style="height: 4px;">
+                <div 
+                  class="progress-bar" 
+                  :class="passwordStrengthClass"
+                  :style="{ width: passwordStrength + '%' }"
+                ></div>
+              </div>
+              <div class="d-flex justify-content-between mt-1">
+                <small class="text-muted" style="font-size: 10px;">Độ bảo mật: {{ passwordStrengthText }}</small>
+                <button type="button" @click="showPassword = !showPassword" class="btn btn-link p-0 text-muted x-small-text text-decoration-none">
+                  {{ showPassword ? 'Ẩn' : 'Hiện' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <input 
+              v-model="form.confirmPassword" 
+              type="password" 
+              class="form-control bg-light-gray x-small-padding" 
+              required
+              placeholder="Xác nhận mật khẩu"
+            >
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label x-small-text text-muted mb-1">Ngày sinh <i class="bi bi-question-circle-fill"></i></label>
+            <div class="row g-2">
+              <div class="col-4">
+                <select class="form-select x-small-padding border-secondary-subtle"><option v-for="d in 31" :key="d">{{d}}</option></select>
+              </div>
+              <div class="col-4">
+                <select class="form-select x-small-padding border-secondary-subtle"><option v-for="m in 12" :key="m">Tháng {{m}}</option></select>
+              </div>
+              <div class="col-4">
+                <select class="form-select x-small-padding border-secondary-subtle"><option v-for="y in 100" :key="y">{{2024 - y + 1}}</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label x-small-text text-muted mb-1">Giới tính <i class="bi bi-question-circle-fill"></i></label>
+            <div class="row g-2">
+              <div class="col-4">
+                <div class="border rounded p-2 d-flex justify-content-between align-items-center x-small-text">
+                  <label class="form-check-label px-2">Nữ</label>
+                  <input class="form-check-input" type="radio" name="gender" value="female">
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="border rounded p-2 d-flex justify-content-between align-items-center x-small-text">
+                  <label class="form-check-label px-2">Nam</label>
+                  <input class="form-check-input" type="radio" name="gender" value="male">
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="border rounded p-2 d-flex justify-content-between align-items-center x-small-text">
+                  <label class="form-check-label px-2">Khác</label>
+                  <input class="form-check-input" type="radio" name="gender" value="other">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="terms-text text-muted mb-4">
+            Bằng cách nhấp vào Đăng ký, bạn đồng ý với <a href="#">Điều khoản</a>, <a href="#">Chính sách quyền riêng tư</a> và <a href="#">Chính sách cookie</a> của chúng tôi. Bạn có thể nhận được thông báo qua SMS từ chúng tôi và có thể hủy nhận bất kỳ lúc nào.
+          </p>
+
+          <div v-if="error" class="alert alert-danger border-0 small py-2 mb-3">
+            {{ error }}
+          </div>
+
+          <div class="text-center mb-3">
+            <button type="submit" class="btn btn-success fw-bold px-5 py-2 fs-5" style="min-width: 194px;">
+              Đăng ký
+            </button>
+          </div>
+
+          <div class="text-center">
+            <router-link to="/login" class="text-primary text-decoration-none small fw-bold">
+              Bạn đã có tài khoản?
+            </router-link>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -161,7 +168,7 @@ const passwordStrengthClass = computed(() => {
 })
 
 const passwordStrengthText = computed(() => {
-  if (passwordStrength.value === 0) return ''
+  if (passwordStrength.value === 0) return 'Trống'
   if (passwordStrength.value <= 33) return 'Yếu'
   if (passwordStrength.value <= 66) return 'Trung bình'
   return 'Mạnh'
@@ -196,63 +203,45 @@ const handleRegister = () => {
 </script>
 
 <style scoped>
-.auth-wrapper {
-  background: #f5f5f5; /* xám nhạt, sạch, công sở */
-  min-height: 100vh;
+.bg-fb-gray { background-color: #f0f2f5; }
+.text-primary { color: #0866ff !important; }
+.bg-light-gray { background-color: #f5f6f7; border: 1px solid #dddfe2; }
+.btn-success { background-color: #00a400; border: none; }
+.btn-success:hover { background-color: #008f00; }
+
+.fb-logo {
+  font-family: Arial, sans-serif;
 }
 
-.auth-side-panel {
-  background: #111; /* đen tuyền */
+.x-small-padding {
+  padding: 8px 10px;
 }
 
-.auth-side-panel,
-.auth-side-panel * {
-  color: #fff;
+.x-small-text {
+  font-size: 12px;
 }
 
-.form-control {
-  border-radius: 0.5rem;
-  border: 1px solid #ccc;
+.terms-text {
+  font-size: 11px;
+  line-height: 1.34;
 }
 
-.form-control:focus {
-  border-color: #000;
-  box-shadow: 0 0 0 0.15rem rgba(0, 0, 0, 0.15);
+.terms-text a {
+  text-decoration: none;
+  color: #385898;
 }
 
-.btn-primary {
-  background: #000;
-  border: 1px solid #000;
-  color: #fff;
-  font-weight: 600;
+.terms-text a:hover {
+  text-decoration: underline;
 }
 
-.btn-primary:hover {
-  background: #222;
-  border-color: #222;
-  transform: translateY(-1px);
+.form-select:focus, .form-control:focus {
+  border-color: #dddfe2;
+  box-shadow: none;
 }
 
-.btn-outline-secondary {
-  border-color: #000;
-  color: #000;
+.card-header {
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
 }
-
-.btn-outline-secondary:hover {
-  background: #000;
-  color: #fff;
-}
-
-.text-primary {
-  color: #000 !important;
-}
-
-a.text-primary:hover {
-  color: #444 !important;
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
-}
-
 </style>

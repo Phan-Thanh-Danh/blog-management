@@ -1,185 +1,120 @@
 <template>
-  <div class="container py-5">
-    <!-- Hiển thị bài viết -->
-    <div v-if="post" class="row">
-      <div class="col-lg-8 mx-auto">
-        <!-- Card bài viết chính -->
-        <div class="card shadow-sm mb-4 post-detail-card">
-          <div class="card-body p-4 p-md-5">
-            <!-- Thông tin tác giả -->
-            <div class="author-info d-flex align-items-center mb-4 pb-4 border-bottom">
-              <img 
-                :src="post.authorAvatar" 
-                class="rounded-circle me-3" 
-                width="56" 
-                height="56" 
-                :alt="post.authorName"
-              >
-              <div class="flex-grow-1">
-                <strong class="d-block fs-5">
-                  {{ post.authorName }}
-                  <button 
-                    v-if="authStore.user && authStore.user.id !== post.authorId" 
-                    @click="handleToggleFollow" 
-                    class="btn btn-sm ms-2 py-0 px-2"
-                    :class="authStore.isFollowing(post.authorId) ? 'btn-outline-secondary' : 'btn-primary'"
-                  >
-                    {{ authStore.isFollowing(post.authorId) ? 'Đang theo dõi' : 'Theo dõi' }}
+  <div class="post-detail-page bg-light min-vh-100 pt-4 pb-5">
+    <div v-if="post" class="container">
+      <div class="row g-4">
+        <!-- 1. Main Content Column -->
+        <div class="col-lg-8">
+          <div class="card shadow-sm border-0 mb-4 post-card bg-white">
+            <div class="card-body p-3 p-md-4">
+              <!-- Author Header (Facebook style) -->
+              <div class="d-flex align-items-center mb-4">
+                <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none">
+                  <img :src="post.authorAvatar" class="rounded-circle border me-3" width="45" height="45" style="object-fit: cover;">
+                </router-link>
+                <div class="flex-grow-1">
+                  <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none text-dark">
+                    <h6 class="fw-bold mb-0 hover-underline">{{ post.authorName }}</h6>
+                  </router-link>
+                  <div class="d-flex align-items-center gap-1">
+                    <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
+                    <span class="text-muted small">•</span>
+                    <i class="bi bi-globe text-muted x-small"></i>
+                  </div>
+                </div>
+                <div v-if="authStore.user && authStore.user.id === post.authorId" class="dropdown">
+                  <button class="btn btn-ghost-dark btn-sm rounded-circle p-0" style="width: 32px; height: 32px;" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots"></i>
                   </button>
-                </strong>
-                <small class="text-muted">
-                  <i class="bi bi-clock"></i> {{ formatDate(post.createdAt) }}
-                </small>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                    <li><a class="dropdown-item" href="#" @click.prevent="editPost"><i class="bi bi-pencil me-2"></i>Chỉnh sửa</a></li>
+                    <li><a class="dropdown-item text-danger" href="#" @click.prevent="deletePost"><i class="bi bi-trash me-2"></i>Xóa bài viết</a></li>
+                  </ul>
+                </div>
               </div>
 
-              <!-- Edit & Delete cho tác giả -->
-              <div v-if="authStore.user && authStore.user.id === post.authorId" class="ms-auto">
-                <button @click="editPost" class="btn btn-warning btn-sm me-2">
-                  <i class="bi bi-pencil"></i> Sửa
-                </button>
-                <button @click="deletePost" class="btn btn-danger btn-sm">
-                  <i class="bi bi-trash"></i> Xóa
-                </button>
-              </div>
-            </div>
+              <!-- Content Area -->
+              <h3 class="fw-bold mb-3 px-1">{{ post.title }}</h3>
+              <div class="post-body-content px-1 mb-4" v-html="formattedContent" @click="handleContentClick"></div>
 
-            <!-- Tiêu đề bài viết -->
-            <h1 class="post-title mb-4">{{ post.title }}</h1>
-
-            <!-- Hình ảnh bài viết (Grid Layout) -->
-            <div v-if="displayImages.length > 0" class="mb-4">
-              <div 
-                class="grid-layout" 
-                :class="getGridClass(displayImages.length)"
-              >
-                <div 
-                  v-for="(img, index) in displayImages.slice(0, 4)" 
-                  :key="index" 
-                  class="grid-item"
-                  @click="openLightbox(index)"
-                >
-                  <img :src="img" :alt="post.title">
-                  <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
-                    +{{ displayImages.length - 4 }}
+              <!-- Image Grid -->
+              <div v-if="displayImages.length > 0" class="image-grid-section -mx-3 mb-4">
+                <div class="grid-layout" :class="getGridClass(displayImages.length)">
+                  <div 
+                    v-for="(img, index) in displayImages.slice(0, 4)" 
+                    :key="index" 
+                    class="grid-item"
+                    @click="openLightbox(index)"
+                  >
+                    <img :src="img" :alt="post.title">
+                    <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
+                      +{{ displayImages.length - 4 }}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Lightbox Modal -->
-            <div v-if="lightboxOpen" class="lightbox-overlay" @click.self="closeLightbox">
-              <button class="btn-close-lightbox" @click="closeLightbox">
-                <i class="bi bi-x-lg"></i>
-              </button>
-              
-              <button 
-                class="btn-nav prev" 
-                @click.stop="prevImage" 
-                v-if="displayImages.length > 1"
-              >
-                <i class="bi bi-chevron-left"></i>
-              </button>
-              
-              <div class="lightbox-content">
-                <img :src="displayImages[currentImageIndex]" class="lightbox-img" alt="Fullscreen">
-                <div class="lightbox-counter">
-                  {{ currentImageIndex + 1 }} / {{ displayImages.length }}
+              <!-- Engagement Stats -->
+              <div class="d-flex justify-content-between align-items-center px-1 py-1">
+                <div class="d-flex align-items-center">
+                  <div class="icon-circle bg-primary text-white me-2">
+                    <i class="bi bi-hand-thumbs-up-fill" style="font-size: 10px;"></i>
+                  </div>
+                  <span class="text-muted small">{{ likesCount }} người thích</span>
+                </div>
+                <div class="text-muted small">
+                  {{ totalCommentsCount }} bình luận • 0 lượt chia sẻ
                 </div>
               </div>
 
-              <button 
-                class="btn-nav next" 
-                @click.stop="nextImage" 
-                v-if="displayImages.length > 1"
-              >
-                <i class="bi bi-chevron-right"></i>
-              </button>
-            </div>
+              <hr class="my-3 opacity-10">
 
-            <!-- Nội dung bài viết -->
-            <div class="post-content mb-4" v-html="formattedContent" @click="handleContentClick"></div>
-
-            <!-- Like & Stats -->
-            <div class="post-actions-detail border-top border-bottom py-3">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="stats d-flex gap-4">
-                  <span class="text-muted">
-                    <i class="bi bi-heart-fill text-danger"></i> {{ likesCount }} lượt thích
-                  </span>
-                  <span class="text-muted">
-                    <i class="bi bi-chat-dots-fill text-primary"></i> {{ totalCommentsCount }} bình luận
-                  </span>
-                </div>
-              </div>
-
-              <div class="d-flex gap-2">
+              <!-- Action Bar -->
+              <div class="d-flex justify-content-between px-1 mb-2">
                 <button 
                   @click="handleLike" 
-                  class="btn btn-lg flex-grow-1"
-                  :class="isLiked ? 'btn-danger' : 'btn-outline-danger'"
+                  class="btn flex-grow-1 action-btn py-2"
+                  :class="{ 'text-primary active-btn': isLiked }"
                 >
-                  <i class="bi" :class="isLiked ? 'bi-heart-fill' : 'bi-heart'"></i>
-                  {{ isLiked ? 'Đã thích' : 'Thích' }}
+                  <i class="bi" :class="isLiked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'"></i>
+                  <span class="ms-2 fw-semibold">Thích</span>
                 </button>
-                <button @click="sharePost" class="btn btn-lg btn-outline-primary flex-grow-1">
-                  <i class="bi bi-share"></i> Chia sẻ
+                <button @click="focusCommentInput" class="btn flex-grow-1 action-btn py-2">
+                  <i class="bi bi-chat-left"></i>
+                  <span class="ms-2 fw-semibold">Bình luận</span>
+                </button>
+                <button @click="sharePost" class="btn flex-grow-1 action-btn py-2">
+                  <i class="bi bi-share"></i>
+                  <span class="ms-2 fw-semibold">Chia sẻ</span>
                 </button>
               </div>
             </div>
-
-            <!-- Nút quay lại -->
-            <div class="mt-4">
-              <router-link to="/" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Quay lại trang chủ
-              </router-link>
-            </div>
           </div>
-        </div>
 
-        <!-- Card phần bình luận -->
-        <div class="card shadow-sm comments-card">
-          <div class="card-header bg-white py-3">
-            <h4 class="mb-0">
-              <i class="bi bi-chat-dots"></i> Bình luận ({{ postComments.length }})
-            </h4>
-          </div>
-          
-          <div class="card-body p-4">
-            <!-- Form thêm bình luận -->
-            <div v-if="authStore.isAuthenticated" class="mb-4 pb-4 border-bottom">
-              <form @submit.prevent="handleAddComment">
-                <div class="d-flex gap-3 align-items-start">
-                  <img 
-                    :src="authStore.user.avatar" 
-                    class="rounded-circle" 
-                    width="48" 
-                    height="48" 
-                    :alt="authStore.user.name"
-                  >
-                  <div class="flex-grow-1">
-                    <textarea 
-                      v-model="commentContent" 
-                      class="form-control mb-3" 
-                      rows="3"
-                      placeholder="Chia sẻ suy nghĩ của bạn..."
-                      required
-                    ></textarea>
-                    <button type="submit" class="btn btn-primary">
-                      <i class="bi bi-send"></i> Đăng bình luận
-                    </button>
-                  </div>
-                </div>
-              </form>
+          <!-- Comments Card -->
+          <div class="card shadow-sm border-0 bg-white p-3 p-md-4">
+            <h6 class="fw-bold mb-4">Bình luận</h6>
+            
+            <!-- Comment Input -->
+            <div v-if="authStore.isAuthenticated" class="d-flex gap-2 mb-4">
+              <img :src="authStore.user.avatar" class="rounded-circle border" width="36" height="36" style="object-fit: cover;">
+              <div class="flex-grow-1">
+                 <textarea 
+                   ref="commentInput"
+                   v-model="commentContent" 
+                   class="form-control bg-light border-0 rounded-4 px-3 py-2" 
+                   rows="1" 
+                   placeholder="Viết bình luận..." 
+                   style="resize: none;"
+                   @keydown.enter.prevent="handleAddComment"
+                 ></textarea>
+                 <small class="text-muted mt-1 d-block ms-2" style="font-size: 11px;">Nhấn Enter để đăng</small>
+              </div>
+            </div>
+            <div v-else class="alert alert-light border rounded-3 mb-4 py-2 px-3 small">
+              Vui lòng <router-link to="/login" class="fw-bold text-decoration-none">đăng nhập</router-link> để bình luận.
             </div>
 
-            <!-- Thông báo yêu cầu đăng nhập -->
-            <div v-else class="alert alert-info">
-              <i class="bi bi-info-circle"></i> 
-              <router-link to="/login" class="alert-link fw-bold">Đăng nhập</router-link> 
-              để tham gia thảo luận
-            </div>
-
-            <!-- Danh sách bình luận -->
+            <!-- Comment List -->
             <div v-if="postComments.length > 0" class="comments-list">
               <CommentItem 
                 v-for="comment in postComments" 
@@ -187,124 +122,138 @@
                 :comment="comment"
               />
             </div>
+            <div v-else class="text-center py-4 opacity-50">
+              <i class="bi bi-chat-dots display-6"></i>
+              <p class="mt-2 mb-0 small">Hãy là người đầu tiên bình luận!</p>
+            </div>
+          </div>
+        </div>
 
-            <!-- Thông báo chưa có bình luận -->
-            <div v-else class="text-center py-5 empty-comments">
-              <i class="bi bi-chat-square-text text-muted" style="font-size: 4rem;"></i>
-              <p class="text-muted mt-3 mb-0">Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+        <!-- 2. Sidebar: Author Info & Recommendations -->
+        <div class="col-lg-4">
+          <div class="sticky-top" style="top: 80px;">
+            <div class="card shadow-sm border-0 author-sidebar-card mb-4 bg-white overflow-hidden">
+               <div class="sidebar-cover bg-primary opacity-25" style="height: 100px;"></div>
+               <div class="card-body text-center pt-0 position-relative">
+                  <router-link :to="`/profile/${post.authorId}`">
+                    <img 
+                      :src="post.authorAvatar" 
+                      class="rounded-circle border border-4 border-white position-absolute start-50 translate-middle-x" 
+                      width="90" height="90" 
+                      style="top: -45px; object-fit: cover; background-color: #f0f2f5;"
+                    >
+                  </router-link>
+                  <div style="margin-top: 55px;">
+                    <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none text-dark">
+                      <h5 class="fw-bold mb-1 hover-underline">{{ post.authorName }}</h5>
+                    </router-link>
+                    <p v-if="authorBio" class="text-muted small px-3 mb-3">{{ authorBio }}</p>
+                    
+                    <div class="d-flex justify-content-center gap-4 mb-4">
+                       <div class="stat-item text-center">
+                          <div class="fw-bold">{{ authorPostsCount }}</div>
+                          <div class="text-muted x-small text-uppercase fw-semibold">Bài viết</div>
+                       </div>
+                       <div class="stat-item text-center">
+                          <div class="fw-bold">{{ followersCount }}</div>
+                          <div class="text-muted x-small text-uppercase fw-semibold">Người theo dõi</div>
+                       </div>
+                    </div>
+
+                    <button 
+                      v-if="authStore.user && authStore.user.id !== post.authorId" 
+                      @click="handleToggleFollow" 
+                      class="btn w-75 fw-bold mb-3"
+                      :class="authStore.isFollowing(post.authorId) ? 'btn-light border' : 'btn-primary'"
+                    >
+                      <i class="bi" :class="authStore.isFollowing(post.authorId) ? 'bi-person-check-fill' : 'bi-person-plus-fill'"></i>
+                      <span class="ms-2">{{ authStore.isFollowing(post.authorId) ? 'Đang theo dõi' : 'Theo dõi' }}</span>
+                    </button>
+                    
+                    <button v-else-if="authStore.user && authStore.user.id === post.authorId" @click="$router.push('/profile')" class="btn btn-light border w-75 fw-bold mb-3">
+                      Quản lý tài khoản
+                    </button>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Footer Small -->
+            <div class="px-2 text-muted x-small opacity-50 text-center">
+               <div class="d-flex flex-wrap justify-content-center gap-2">
+                 <span>Giới thiệu</span> • <span>Hỗ trợ</span> • <span>Điều khoản</span> • <span>Quyền riêng tư</span>
+               </div>
+               <div class="mt-1">MyBlog © 2024</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Thông báo không tìm thấy bài viết -->
-    <div v-else class="row">
-      <div class="col-md-6 mx-auto text-center py-5">
-        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
-        <h3 class="mt-4">Không tìm thấy bài viết</h3>
-        <p class="text-muted mb-4">Bài viết bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
-        <router-link to="/" class="btn btn-primary">
-          <i class="bi bi-house"></i> Về trang chủ
-        </router-link>
+    <!-- Error State -->
+    <div v-else class="container py-5 text-center">
+      <div class="py-5 bg-white shadow-sm rounded-3">
+        <i class="bi bi-exclamation-octagon display-1 text-danger opacity-25"></i>
+        <h2 class="mt-4 fw-bold">Không tìm thấy bài viết</h2>
+        <p class="text-muted mb-4">Bài viết này có thể đã bị xóa hoặc liên kết không chính xác.</p>
+        <router-link to="/" class="btn btn-primary rounded-pill px-5 fw-bold">Về trang chủ</router-link>
       </div>
     </div>
 
-    <!-- Modal Edit Post -->
-    <div class="modal fade" id="editPostModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Chỉnh sửa bài viết</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="updatePost">
-              <div class="mb-3">
-                <label class="form-label">Tiêu đề</label>
-                <input v-model="editForm.title" type="text" class="form-control" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Nội dung</label>
-                <Editor v-model="editForm.content" :height="400" />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Hình ảnh minh họa</label>
-                <input 
-                  type="file" 
-                  @change="handleEditImageUpload"
-                  class="form-control mb-3"
-                  accept="image/*"
-                  multiple
-                >
-                
-                <!-- Hiển thị các ảnh hiện có -->
-                <div v-if="editForm.images.length > 0" class="d-flex flex-wrap gap-2">
-                  <div 
-                    v-for="(img, index) in editForm.images" 
-                    :key="index"
-                    class="position-relative"
-                  >
-                    <img 
-                      :src="img" 
-                      height="100" 
-                      class="rounded border" 
-                      alt="Preview"
-                      style="object-fit: cover; width: 100px;"
-                    >
-                    <button 
-                      @click="removeEditImage(index)" 
-                      type="button" 
-                      class="btn btn-danger btn-sm position-absolute top-0 end-0"
-                      style="transform: translate(50%, -50%); padding: 0.1rem 0.3rem;"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check-circle"></i> Cập nhật
-              </button>
-            </form>
-          </div>
-        </div>
+    <!-- Edit Modal (Preserve Logic) -->
+    <PostModal 
+      ref="postModalRef"
+      mode="edit"
+      :initial-data="post"
+      @saved="() => {}"
+    />
+
+    <!-- Lightbox (Preserve Logic) -->
+    <div v-if="lightboxOpen" class="lightbox-overlay" @click.self="closeLightbox">
+      <button class="btn-close-lightbox" @click="closeLightbox"><i class="bi bi-x-lg"></i></button>
+      <button class="btn-nav prev" @click.stop="prevImage" v-if="displayImages.length > 1"><i class="bi bi-chevron-left"></i></button>
+      <div class="lightbox-content">
+        <img :src="displayImages[currentImageIndex]" class="lightbox-img" alt="Fullscreen">
+        <div class="lightbox-counter">{{ currentImageIndex + 1 }} / {{ displayImages.length }}</div>
       </div>
+      <button class="btn-nav next" @click.stop="nextImage" v-if="displayImages.length > 1"><i class="bi bi-chevron-right"></i></button>
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import CommentItem from '../components/CommentItem.vue'
-import Editor from '../components/Editor.vue'
-import { Modal } from 'bootstrap'
+import PostModal from '../components/PostModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
 const commentContent = ref('')
-const editForm = ref({
-  id: null,
-  title: '',
-  content: '',
-  image: '',
-  images: []
-})
+const commentInput = ref(null)
+const postModalRef = ref(null)
 
 // Lightbox state
 const lightboxOpen = ref(false)
 const currentImageIndex = ref(0)
-let editModal = null
 
 // Computed: Lấy bài viết
 const post = computed(() => {
   const postId = parseInt(route.params.id)
   return authStore.posts.find(p => p.id === postId)
 })
+
+const author = computed(() => {
+  if (!post.value) return null
+  return authStore.users.find(u => u.id === post.value.authorId)
+})
+
+const authorBio = computed(() => author.value?.bio || 'Chưa có tiểu sử.')
+const authorPostsCount = computed(() => authStore.posts.filter(p => p.authorId === post.value?.authorId).length)
+const followersCount = computed(() => authStore.users.filter(u => u.following && u.following.includes(post.value?.authorId)).length)
 
 const getGridClass = (count) => {
   if (count <= 1) return 'cols-1'
@@ -316,12 +265,12 @@ const getGridClass = (count) => {
 const openLightbox = (index) => {
   currentImageIndex.value = index
   lightboxOpen.value = true
-  document.body.style.overflow = 'hidden' // Disable scroll
+  document.body.style.overflow = 'hidden'
 }
 
 const closeLightbox = () => {
   lightboxOpen.value = false
-  document.body.style.overflow = '' // Enable scroll
+  document.body.style.overflow = ''
 }
 
 const prevImage = () => {
@@ -334,24 +283,20 @@ const nextImage = () => {
   currentImageIndex.value = (currentImageIndex.value + 1) % total
 }
 
-// Computed: Lấy comments
 const postComments = computed(() => {
   const postId = parseInt(route.params.id)
   return authStore.getPostComments(postId)
 })
 
-// Computed: Tổng số comments (bao gồm replies)
 const totalCommentsCount = computed(() => {
   const postId = parseInt(route.params.id)
   return authStore.comments.filter(c => c.postId === postId).length
 })
 
-// Computed: Số likes
 const likesCount = computed(() => {
   return authStore.getPostLikesCount(parseInt(route.params.id))
 })
 
-// Computed: Lấy danh sách ảnh
 const displayImages = computed(() => {
   if (!post.value) return []
   if (post.value.images && post.value.images.length > 0) {
@@ -363,7 +308,6 @@ const displayImages = computed(() => {
   return []
 })
 
-// Computed: Đã like chưa
 const isLiked = computed(() => {
   return authStore.isPostLiked(parseInt(route.params.id))
 })
@@ -371,20 +315,13 @@ const isLiked = computed(() => {
 const formatDate = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
   })
 }
 
 const handleAddComment = () => {
-  if (!commentContent.value.trim()) {
-    alert('Vui lòng nhập nội dung bình luận')
-    return
-  }
-
+  if (!commentContent.value.trim()) return
   try {
     const postId = parseInt(route.params.id)
     authStore.createComment(postId, commentContent.value)
@@ -399,7 +336,6 @@ const handleLike = () => {
     alert('Bạn cần đăng nhập để thích bài viết')
     return
   }
-
   try {
     authStore.toggleLike(parseInt(route.params.id))
   } catch (error) {
@@ -418,19 +354,20 @@ const handleToggleFollow = () => {
 const sharePost = () => {
   const url = window.location.href
   navigator.clipboard.writeText(url).then(() => {
-    alert('Đã sao chép liên kết vào bộ nhớ tạm!')
-  }).catch(err => {
-    console.error('Không thể sao chép: ', err)
+    alert('Đã sao chép liên kết!')
   })
 }
 
-// Computed: Format nội dung (biến #hashtag thành link)
+const focusCommentInput = () => {
+  if (authStore.isAuthenticated) {
+    commentInput.value?.focus()
+  } else {
+    alert('Vui lòng đăng nhập để bình luận')
+  }
+}
+
 const formattedContent = computed(() => {
   if (!post.value || !post.value.content) return ''
-  
-  // Regex tìm #hashtag (tránh bắt hashtag bên trong các tag HTML)
-  // Cách tiếp cận đơn giản: thay thế text sau khi bóc tách, hơặc dùng regex an toàn.
-  // Ở đây chúng ta bọc hashtag bằng một thẻ span có class đặc biệt để xử lý click
   return post.value.content.replace(/(^|\s)(#[\w\u00C0-\u1EF9]+)/g, (match, p1, p2) => {
     return `${p1}<a href="/?search=${encodeURIComponent(p2)}" class="hashtag-link text-primary text-decoration-none fw-bold" data-hashtag="${p2}">${p2}</a>`
   })
@@ -445,101 +382,8 @@ const handleContentClick = (event) => {
   }
 }
 
-const renderMarkdown = (text) => {
-  if (!text) return ''
-  
-  // Escape HTML đầu tiên để tránh XSS
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-
-  // Định dạng Bold: **text**
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-  
-  // Định dạng Italic: *text*
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
-  
-  // Định dạng Inline Code: `text`
-  html = html.replace(/`(.*?)`/g, '<code class="bg-light px-1 rounded">$1</code>')
-  
-  // Định dạng Links: [text](url)
-  html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-
-  // Xử lý xuống dòng
-  return html.replace(/\n/g, '<br>')
-}
-
 const editPost = () => {
-  if (!post.value) return
-  
-  // Lấy tất cả ảnh từ bài viết
-  let allImages = []
-  if (post.value.images && post.value.images.length > 0) {
-    allImages = [...post.value.images]
-  } else if (post.value.image) {
-    allImages = [post.value.image]
-  }
-  
-  editForm.value = {
-    id: post.value.id,
-    title: post.value.title,
-    content: post.value.content,
-    image: post.value.image || '',
-    images: allImages
-  }
-  
-  if (!editModal) {
-    const modalEl = document.getElementById('editPostModal')
-    if (modalEl) editModal = new Modal(modalEl)
-  }
-  if (editModal) editModal.show()
-}
-
-const handleEditImageUpload = (event) => {
-  const files = event.target.files
-  if (!files || files.length === 0) return
-
-  const newImages = []
-  let filesProcessed = 0
-
-  Array.from(files).forEach((file) => {
-    if (file.size > 2 * 1024 * 1024) {
-      alert(`Ảnh ${file.name} quá lớn (tối đa 2MB)`)
-      filesProcessed++
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      newImages.push(e.target.result)
-      filesProcessed++
-
-      if (filesProcessed === files.length) {
-        editForm.value.images = [...editForm.value.images, ...newImages]
-      }
-    }
-    reader.readAsDataURL(file)
-  })
-  
-  // Clear input sau khi đọc xong
-  event.target.value = ''
-}
-
-const removeEditImage = (index) => {
-  editForm.value.images.splice(index, 1)
-}
-
-const updatePost = () => {
-  try {
-    authStore.updatePost(editForm.value.id, editForm.value)
-    editModal.hide()
-    alert('Cập nhật bài viết thành công!')
-  } catch (error) {
-    alert(error.message)
-  }
+  postModalRef.value?.show()
 }
 
 const deletePost = () => {
@@ -556,222 +400,126 @@ const deletePost = () => {
 </script>
 
 <style scoped>
-.post-detail-card {
-  border: none;
+.post-detail-page {
+  background-color: #f0f2f5;
+}
+
+.post-card {
   border-radius: 12px;
-  overflow: hidden;
 }
 
-.post-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  line-height: 1.3;
-}
-
-.author-info img {
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.post-content {
-  font-size: 1.125rem;
+.post-body-content {
+  font-size: 1.05rem;
   line-height: 1.6;
-  color: #333;
 }
 
-.post-content :deep(p) {
-  margin-bottom: 1.25rem;
+.image-grid-section {
+  margin-left: -1rem;
+  margin-right: -1rem;
 }
 
-.post-content :deep(p:last-child) {
-  margin-bottom: 0;
+.action-btn {
+  border: none;
+  background: transparent;
+  color: #65676b;
+  border-radius: 4px;
+  transition: background 0.2s;
 }
 
-.post-actions-detail {
-  margin: 2rem 0;
+.action-btn:hover {
+  background-color: #f2f2f2;
 }
 
-.stats {
-  font-size: 1rem;
+.active-btn {
+  color: #0866ff !important;
 }
 
-/* Images Grid Styles */
+.icon-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.x-small { font-size: 0.75rem; }
+
+.hover-underline:hover {
+  text-decoration: underline !important;
+}
+
+.author-sidebar-card {
+  border-radius: 12px;
+}
+
+.sidebar-cover {
+  background: linear-gradient(to bottom, #0866ff, #4b91ff);
+}
+
+.ls-1 { letter-spacing: 0.5px; }
+
+/* Grid Styles (Consistent with PostCard) */
 .grid-layout {
-    display: grid;
-    gap: 4px;
-    width: 100%;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #f0f0f0;
-}
-
-.grid-layout.cols-1 { grid-template-columns: 1fr; }
-.grid-layout.cols-1 .grid-item img { 
-  max-height: 500px; 
+  display: grid;
+  gap: 2px;
   width: 100%;
-  object-fit: contain; 
-}
-
-.grid-layout.cols-2 { 
   aspect-ratio: 16/9;
-  grid-template-columns: 1fr 1fr; 
+  overflow: hidden;
+  background: #f0f2f5;
 }
 
+.grid-layout.cols-1 { grid-template-columns: 1fr; aspect-ratio: auto; }
+.grid-layout.cols-1 .grid-item img { max-height: 600px; width: 100%; object-fit: contain; }
+
+.grid-layout.cols-2 { grid-template-columns: 1fr 1fr; }
 .grid-layout.cols-3 { 
-    aspect-ratio: 16/9;
-    grid-template-columns: 1.5fr 1fr; 
-    grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1.5fr 1fr; 
+  grid-template-rows: 1fr 1fr;
 }
 .grid-layout.cols-3 .grid-item:first-child { grid-row: span 2; } 
-
-.grid-layout.cols-4 { 
-  aspect-ratio: 16/9;
-  grid-template-columns: 1fr 1fr; 
-  grid-template-rows: 1fr 1fr; 
-}
+.grid-layout.cols-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
 .grid-item {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-    overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }
 
 .grid-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.3s ease;
-}
-
-.grid-item:hover img {
-    transform: scale(1.05);
+  width: 100%; height: 100%; object-fit: cover; display: block;
 }
 
 .more-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    font-weight: bold;
-    backdrop-filter: blur(2px);
+  position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem; font-weight: bold;
 }
 
-/* Lightbox Styles */
+/* Lightbox */
 .lightbox-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background-color: rgba(0, 0, 0, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(5px);
+  position: fixed; inset: 0; z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex; align-items: center; justify-content: center;
 }
 
-.lightbox-content {
-  position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
+.lightbox-content { position: relative; max-width: 90vw; max-height: 90vh; }
+.lightbox-img { max-width: 100%; max-height: 90vh; object-fit: contain; }
+.lightbox-counter { position: absolute; top: -40px; left: 50%; transform: translateX(-50%); color: white; }
+
+.btn-close-lightbox, .btn-nav {
+  position: absolute; background: rgba(255, 255, 255, 0.1); border: none;
+  color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s; cursor: pointer;
 }
 
-.lightbox-img {
-  max-width: 100%;
-  max-height: 90vh;
-  object-fit: contain;
-  border-radius: 4px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-}
+.btn-close-lightbox { top: 20px; right: 20px; width: 44px; height: 44px; font-size: 1.5rem; }
+.btn-nav { top: 50%; transform: translateY(-50%); width: 50px; height: 50px; font-size: 1.5rem; }
+.btn-nav.prev { left: 20px; }
+.btn-nav.next { right: 20px; }
 
-.lightbox-counter {
-  position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: white;
-  font-size: 1.1rem;
-  letter-spacing: 1px;
-}
-
-.btn-close-lightbox {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  z-index: 10000;
-}
-
-.btn-close-lightbox:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.btn-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  z-index: 10000;
-}
-
-.btn-nav:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-50%) scale(1.1);
-}
-
-.btn-nav.prev {
-  left: 20px;
-}
-
-.btn-nav.next {
-  right: 20px;
-}
-
-@media (max-width: 768px) {
-  .post-title {
-    font-size: 1.5rem;
-  }
-  
-  .post-content {
-    font-size: 1rem;
-  }
-
-  .grid-layout {
-      gap: 2px;
-  }
-  
-  .btn-nav {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
+@media (max-width: 991px) {
+  .post-detail-page { padding-top: 1rem !important; }
 }
 </style>

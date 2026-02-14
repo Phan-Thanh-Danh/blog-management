@@ -1,98 +1,118 @@
  <template>
-  <div class="home-wrapper">
-    <!-- Hero Section: Compact & Modern -->
-    <div class="hero-section py-5 mb-5">
-      <div class="container">
-        <div class="row align-items-center">
-          <div class="col-lg-7 text-white">
-            <h1 class="display-5 fw-bold mb-3">
-              Chào mừng đến MyBlog
-            </h1>
-            <p class="fs-5 opacity-75 mb-4">Chia sẻ kiến thức, kinh nghiệm và những câu chuyện thú vị của bạn.</p>
-            <div class="d-flex gap-2">
-              <router-link v-if="!authStore.isAuthenticated" to="/register" class="btn btn-light rounded-pill px-4 shadow-sm">
-                Bắt đầu ngay
-              </router-link>
-              <button v-else @click="openCreateModal" class="btn btn-light rounded-pill px-4 shadow-sm">
-                Viết bài mới
-              </button>
+  <div class="home-page min-vh-100 bg-light pt-4">
+    <div class="container px-lg-4">
+      <div class="row g-4">
+        <!-- 1. Left Sidebar: Navigation & Shortcuts -->
+        <div class="col-lg-3 d-none d-lg-block sticky-column">
+          <div class="nav-sidebar pe-2">
+            <!-- Profile Shortcut -->
+            <router-link v-if="authStore.isAuthenticated" :to="`/profile`" class="nav-item-link mb-1">
+              <img :src="authStore.user?.avatar" class="rounded-circle border me-3" width="36" height="36" style="object-fit: cover;">
+              <span class="fw-bold">{{ authStore.user?.name }}</span>
+            </router-link>
+
+            <router-link 
+              to="/" 
+              @click="resetHome"
+              class="nav-item-link mb-1" 
+              :class="{ active: !searchFilter && feedType === 'all' }"
+            >
+              <i class="bi bi-house-door-fill fs-5 me-3 text-primary"></i>
+              <span class="fw-semibold">Trang chủ</span>
+            </router-link>
+
+            <a 
+              v-if="authStore.isAuthenticated" 
+              @click.prevent="feedType = 'following'" 
+              href="#" 
+              class="nav-item-link mb-1" 
+              :class="{ active: feedType === 'following' }"
+            >
+              <i class="bi bi-people-fill fs-5 me-3 text-info"></i>
+              <span class="fw-semibold">Bạn bè (Đang theo dõi)</span>
+            </a>
+
+            <hr class="my-2 px-3">
+
+            <h6 class="text-muted fw-bold px-3 mb-2 small text-uppercase">Danh mục</h6>
+            <div class="categories-list">
+               <a 
+                 v-for="cat in authStore.categories" 
+                 :key="cat" 
+                 href="#" 
+                 class="nav-item-link mb-1"
+                 :class="{ active: searchFilter === cat }"
+                 @click.prevent="searchFilter = cat"
+               >
+                 <i class="bi bi-hash fs-5 me-3 text-secondary"></i>
+                 <span>{{ cat }}</span>
+               </a>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <!-- Posts Section -->
-        <div class="col-lg-10 col-xl-8">
-          <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-            <div class="d-flex align-items-center gap-3">
-              <h2 class="fw-bold mb-0">
-                <i class="bi bi-newspaper"></i> Bài viết mới
-              </h2>
-              <div class="btn-group shadow-sm">
-                <button 
-                  @click="feedType = 'all'" 
-                  class="btn btn-sm"
-                  :class="feedType === 'all' ? 'btn-primary' : 'btn-outline-primary'"
-                >
-                  Tất cả
+        <!-- 2. Center Column: Composer & Feed -->
+        <div class="col-lg-6">
+          <div class="feed-container mx-auto" style="max-width: 600px;">
+            <!-- Post Composer (Facebook Style) -->
+            <div v-if="authStore.isAuthenticated" class="card shadow-sm border-0 mb-4 p-3 composer-card">
+              <div class="d-flex align-items-center gap-2">
+                <img :src="authStore.user?.avatar" class="rounded-circle border" width="40" height="40" style="object-fit: cover;">
+                <button @click="openCreateModal" class="flex-grow-1 btn btn-light rounded-pill px-4 py-2 text-muted text-start border-0 shadow-none hover-bg-gray">
+                  {{ authStore.user?.name }} ơi, bạn đang nghĩ gì thế?
                 </button>
-                <button 
-                  v-if="authStore.isAuthenticated"
-                  @click="feedType = 'following'" 
-                  class="btn btn-sm"
-                  :class="feedType === 'following' ? 'btn-primary' : 'btn-outline-primary'"
-                >
-                  Đang theo dõi
+              </div>
+              <hr class="my-3 opacity-10">
+              <div class="d-flex justify-content-around">
+                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2">
+                  <i class="bi bi-camera-video-fill text-danger me-2"></i> Video trực tiếp
+                </button>
+                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2">
+                  <i class="bi bi-images text-success me-2"></i> Ảnh/video
+                </button>
+                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 d-none d-sm-block">
+                  <i class="bi bi-emoji-smile text-warning me-2"></i> Cảm xúc
                 </button>
               </div>
             </div>
 
-            <div class="dropdown d-flex gap-2 ms-auto">
-              <div v-if="searchFilter" class="d-flex align-items-center me-2">
-                <span class="badge bg-primary text-white border me-2 py-2 px-3 rounded-pill">
-                   # {{ searchFilter }}
-                  <button @click="clearFilter" class="btn-close btn-close-white ms-2" style="font-size: 0.5rem;"></button>
-                </span>
-              </div>
-              <button class="btn btn-outline-secondary btn-sm dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-funnel"></i> Sắp xếp
-              </button>
-              <ul class="dropdown-menu shadow">
-                <li><a class="dropdown-item" @click="sortBy = 'newest'" href="#">Mới nhất</a></li>
-                <li><a class="dropdown-item" @click="sortBy = 'oldest'" href="#">Cũ nhất</a></li>
-                <li><a class="dropdown-item" @click="sortBy = 'mostLiked'" href="#">Nhiều like nhất</a></li>
-              </ul>
+            <!-- Feed Filters/Sort -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+               <h5 class="fw-bold mb-0">Bài viết</h5>
+               <div class="dropdown">
+                  <button class="btn btn-light btn-sm border-0 fw-semibold dropdown-toggle shadow-none" data-bs-toggle="dropdown">
+                    Lọc: {{ sortBy === 'newest' ? 'Mới nhất' : sortBy === 'oldest' ? 'Cũ nhất' : 'Phổ biến' }}
+                  </button>
+                  <ul class="dropdown-menu shadow-sm border-0">
+                    <li><a class="dropdown-item" @click.prevent="sortBy = 'newest'" href="#">Mới nhất</a></li>
+                    <li><a class="dropdown-item" @click.prevent="sortBy = 'oldest'" href="#">Cũ nhất</a></li>
+                    <li><a class="dropdown-item" @click.prevent="sortBy = 'mostLiked'" href="#">Nhiều like nhất</a></li>
+                  </ul>
+               </div>
             </div>
-          </div>
 
-          <!-- Empty State -->
-          <div v-if="sortedPosts.length === 0" class="empty-state text-center py-5 shadow-sm border-0">
-            <i class="bi bi-inbox" style="font-size: 5rem; color: #ddd;"></i>
-            <h3 class="mt-4 text-muted">
-              {{ feedType === 'following' ? 'Chưa có bài viết từ người bạn theo dõi' : 'Chưa có bài viết nào' }}
-            </h3>
-            <p v-if="feedType === 'following'" class="text-muted mb-4">
-              Hãy theo dõi thêm nhiều tác giả để thấy bài viết của họ tại đây!
-            </p>
-            <p v-else class="text-muted mb-4">Hãy là người đầu tiên đăng bài!</p>
-            
-            <div v-if="feedType === 'following'">
-              <button @click="feedType = 'all'" class="btn btn-outline-primary">
-                Khám phá tất cả bài viết
-              </button>
+            <!-- Active Filter Badge -->
+            <div v-if="searchFilter" class="mb-3 px-1">
+               <div class="badge bg-white text-primary border rounded-pill py-2 px-3 d-inline-flex align-items-center shadow-sm">
+                  # {{ searchFilter }}
+                  <i class="bi bi-x-lg ms-2 cursor-pointer" @click="clearFilter" style="font-size: 10px;"></i>
+               </div>
             </div>
-            <button v-else-if="authStore.isAuthenticated" @click="openCreateModal" class="btn btn-primary btn-lg rounded-pill">
-              <i class="bi bi-plus-circle"></i> Viết bài đầu tiên
-            </button>
-          </div>
 
-          <!-- Posts List -->
-          <div v-else>
-            <div class="row row-cols-1 g-4">
-              <div v-for="post in sortedPosts" :key="post.id" class="col">
+            <!-- Empty State -->
+            <div v-if="sortedPosts.length === 0" class="empty-state text-center py-5 shadow-sm bg-white rounded-3 mb-4">
+              <i class="bi bi-inbox display-1 text-muted opacity-25"></i>
+              <h4 class="mt-4 fw-bold">Chưa có bài viết nào</h4>
+              <p class="text-muted mb-4">
+                {{ feedType === 'following' ? 'Theo dõi ai đó để xem bài viết của họ!' : 'Hãy là người đầu tiên chia sẻ câu chuyện của mình.' }}
+              </p>
+              <button v-if="feedType === 'following'" @click="feedType = 'all'" class="btn btn-primary rounded-pill px-4">Khám phá ngay</button>
+              <button v-else-if="authStore.isAuthenticated" @click="openCreateModal" class="btn btn-primary rounded-pill px-4">Đăng bài ngay</button>
+            </div>
+
+            <!-- Posts List -->
+            <div v-else class="posts-list">
+              <div v-for="post in sortedPosts" :key="post.id">
                 <PostCard 
                   :post="post"
                   @edit="editPost"
@@ -100,13 +120,41 @@
                 />
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Load More -->
-            <div v-if="sortedPosts.length >= 10" class="text-center mt-5">
-              <button class="btn btn-outline-primary rounded-pill px-5">
-                Xem thêm
-              </button>
-            </div>
+        <!-- 3. Right Sidebar: Suggested People -->
+        <div class="col-lg-3 d-none d-lg-block sticky-column">
+          <div class="widgets-sidebar border-start ps-3">
+             <div class="card shadow-none border-0 bg-transparent">
+                <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+                  <h6 class="text-muted fw-bold mb-0 text-uppercase small ls-1">Gợi ý theo dõi</h6>
+                </div>
+                <div class="list-group list-group-flush rounded-3 overflow-hidden shadow-sm bg-white border">
+                   <div v-for="user in suggestedUsers" :key="user.id" class="list-group-item border-0 py-3">
+                     <div class="d-flex align-items-center">
+                        <img :src="user.avatar" class="rounded-circle border me-3" width="40" height="40" style="object-fit: cover;">
+                        <div class="flex-grow-1 overflow-hidden">
+                          <router-link :to="`/profile/${user.id}`" class="d-block fw-bold text-dark text-decoration-none text-truncate mb-0 small">{{ user.name }}</router-link>
+                          <div class="x-small text-muted">Gợi ý cho bạn</div>
+                        </div>
+                     </div>
+                     <button @click="authStore.toggleFollow(user.id)" class="btn btn-primary btn-sm w-100 mt-2 fw-semibold rounded-2">
+                       Theo dõi
+                     </button>
+                   </div>
+                   <div v-if="suggestedUsers.length === 0" class="list-group-item py-4 text-center text-muted small">
+                     Bạn đã theo dõi hết rồi!
+                   </div>
+                </div>
+             </div>
+             
+             <!-- Simple Footer -->
+             <div class="mt-4 px-2 text-muted x-small">
+               <div class="d-flex flex-wrap gap-1">
+                 <span>Quyền riêng tư</span> • <span>Điều khoản</span> • <span>Dịch vụ</span> • <span>MyBlog © 2024</span>
+               </div>
+             </div>
           </div>
         </div>
       </div>
@@ -121,6 +169,7 @@
     />
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed, watch } from 'vue'
@@ -155,7 +204,17 @@ const handlePostSaved = () => {
 // Watch query search để cập nhật filter
 watch(() => route.query.search, (newSearch) => {
   searchFilter.value = newSearch || ''
+  // Nếu có tìm kiếm, đảm bảo feedType là 'all' để thấy kết quả rộng hơn
+  if (newSearch) feedType.value = 'all'
 }, { immediate: true })
+
+// Watch for route change to reset filters when clicking "Trang chủ"
+watch(() => route.path, (newPath) => {
+  if (newPath === '/' && Object.keys(route.query).length === 0) {
+    feedType.value = 'all'
+    searchFilter.value = ''
+  }
+})
 
 // Watch for global create action from Navbar
 watch(() => route.query.action, (action) => {
@@ -167,6 +226,14 @@ watch(() => route.query.action, (action) => {
   }
 }, { immediate: true })
 
+
+const resetHome = () => {
+  feedType.value = 'all'
+  searchFilter.value = ''
+  if (Object.keys(route.query).length > 0) {
+    router.push('/')
+  }
+}
 
 // Computed: Sắp xếp và Lọc posts
 const sortedPosts = computed(() => {
@@ -187,8 +254,11 @@ const sortedPosts = computed(() => {
     const queryWithoutHash = originalQuery.replace('#', '')
     
     posts = posts.filter(post => {
-      // Ưu tiên khớp hashtag nếu query có dấu #
-      const isTagMatch = post.tags && post.tags.some(t => t.toLowerCase() === originalQuery)
+      // Ưu tiên khớp hashtag (tag trong store ko còn dấu #)
+      const isTagMatch = post.tags && post.tags.some(t => {
+        const tagLower = t.toLowerCase()
+        return tagLower === originalQuery || tagLower === queryWithoutHash
+      })
       
       const isCategoryMatch = post.category && post.category.toLowerCase() === queryWithoutHash
       const isTitleMatch = post.title.toLowerCase().includes(queryWithoutHash)
@@ -210,6 +280,14 @@ const sortedPosts = computed(() => {
   }
   
   return posts
+})
+
+// Computed: Gợi ý 3 người dùng khác mà chưa follow
+const suggestedUsers = computed(() => {
+  if (!authStore.user) return authStore.users.slice(0, 3)
+  return authStore.users
+    .filter(u => u.id !== authStore.user.id && !authStore.isFollowing(u.id))
+    .slice(0, 3)
 })
 
 const filterByTag = (tag) => {
@@ -239,60 +317,78 @@ const deletePost = (postId) => {
 </script>
 
 <style scoped>
-.home-wrapper {
-  background-color: #f8f9fa;
-  min-height: 100vh;
+.home-page {
+  background-color: #f0f2f5;
+  color: #1c1e21;
 }
 
-.hero-section {
-  background: linear-gradient(135deg, #2b3e50 0%, #4b6cb7 100%);
-  color: white !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+.sticky-column {
+  position: sticky;
+  top: 80px;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
 }
 
-.hero-section h1 {
-  color: white;
+.sticky-column::-webkit-scrollbar {
+  width: 4px;
+}
+.sticky-column::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+}
+.sticky-column:hover::-webkit-scrollbar-thumb {
+  background: #bcc0c4;
 }
 
-.hero-section p {
-  color: rgba(255,255,255,0.8);
+/* Sidebar Links */
+.nav-item-link {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  color: #1c1e21;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s;
 }
 
-.card {
+.nav-item-link:hover {
+  background: #e4e6e9;
+}
+
+.nav-item-link.active {
+  background: rgba(8, 102, 255, 0.1);
+  color: #0866ff;
+}
+
+/* Post Composer */
+.composer-card {
+  border-radius: 12px;
+}
+
+.hover-bg-gray:hover {
+  background-color: #e4e6e9 !important;
+}
+
+.btn-ghost-dark {
+  background: transparent;
   border: none;
-  border-radius: 16px;
-  transition: all 0.3s ease;
+  color: #65676b;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: background 0.2s;
 }
 
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
+.btn-ghost-dark:hover {
+  background: #f2f2f2;
 }
 
-.empty-state {
-  background: white;
-  border-radius: 20px;
-  padding: 4rem;
-}
+/* Widgets */
+.ls-1 { letter-spacing: 0.5px; }
+.x-small { font-size: 0.75rem; }
 
-.badge {
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-.hover-shadow:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-@media (max-width: 992px) {
-  .hero-section {
-    text-align: center;
-    padding: 3rem 0;
+@media (max-width: 991px) {
+  .home-page {
+    padding-top: 1rem !important;
   }
 }
 </style>

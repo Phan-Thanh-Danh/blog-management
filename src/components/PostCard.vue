@@ -1,8 +1,69 @@
 <template>
-  <div class="card mb-4 shadow-sm post-card">
+  <div class="card mb-3 shadow-none border-0 post-card bg-white cursor-pointer" @click="handleCardClick">
+    <div class="card-body p-3">
+      <!-- 1. Author Header -->
+      <div class="d-flex align-items-center mb-3">
+        <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none">
+          <img 
+            :src="post.authorAvatar" 
+            class="rounded-circle border me-2 cursor-pointer" 
+            width="40" 
+            height="40" 
+            :alt="post.authorName"
+            style="object-fit: cover;"
+          >
+        </router-link>
+        <div class="flex-grow-1">
+          <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none text-dark">
+            <strong class="d-block cursor-pointer hover-underline mb-0">{{ post.authorName }}</strong>
+          </router-link>
+          <div class="d-flex align-items-center gap-1">
+            <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
+            <span class="text-muted small">•</span>
+            <i class="bi bi-globe text-muted x-small"></i>
+          </div>
+        </div>
+        
+        <!-- Author Actions Dropdown -->
+        <div v-if="authStore.user && Number(authStore.user.id) === Number(post.authorId)" class="dropdown">
+           <button 
+             class="btn btn-ghost-dark btn-sm rounded-circle p-0 flex-center" 
+             style="width: 32px; height: 32px;" 
+             @click.stop="toggleDropdown"
+             type="button"
+           >
+             <i class="bi bi-three-dots"></i>
+           </button>
+           <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" :class="{ show: showDropdown }">
+             <li><a class="dropdown-item" href="#" @click.prevent="handleEdit"><i class="bi bi-pencil me-2"></i>Chỉnh sửa bài viết</a></li>
+             <li><a class="dropdown-item text-danger" href="#" @click.prevent="handleDeleteClick"><i class="bi bi-trash me-2"></i>Xóa bài viết</a></li>
+           </ul>
+        </div>
+      </div>
+
+      <!-- 2. Text Content -->
+      <div class="post-text-content mb-3 px-1">
+        <h6 v-if="post.title" class="fw-bold mb-2">{{ post.title }}</h6>
+        <p class="card-text mb-2 text-dark">{{ truncateContent(post.content, 250) }}</p>
+        
+        <!-- Hashtags -->
+        <div v-if="post.tags && post.tags.length > 0" class="mb-2 d-flex flex-wrap gap-1">
+          <span 
+            v-for="tag in post.tags" 
+            :key="tag"
+            @click.stop="filterByHashtag(tag)"
+            class="badge-hashtag"
+          >
+            #{{ tag }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Image Grid (Full width) -->
     <div 
       v-if="displayImages.length > 0" 
-      class="grid-layout"
+      class="grid-layout border-top border-bottom bg-light"
       :class="`cols-${Math.min(displayImages.length, 4)}`"
     >
       <div 
@@ -10,102 +71,55 @@
         :key="index" 
         class="grid-item"
       >
-        <img :src="img" :alt="post.title">
+        <img :src="img" :alt="post.title" loading="lazy">
         <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
           +{{ displayImages.length - 4 }}
         </div>
       </div>
     </div>
-    
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-start mb-2">
-        <h5 class="card-title fw-bold mb-0">{{ post.title }}</h5>
-        <span v-if="post.category" class="badge bg-info text-dark small">{{ post.category }}</span>
-      </div>
-      <p class="card-text text-muted">{{ truncateContent(post.content, 150) }}</p>
-      
-      <!-- Hashtags chips -->
-      <div v-if="post.tags && post.tags.length > 0" class="mb-3 d-flex flex-wrap gap-1">
-        <span 
-          v-for="tag in post.tags" 
-          :key="tag"
-          @click.stop="filterByHashtag(tag)"
-          class="badge bg-light text-primary border small cursor-pointer hover-shadow"
-        >
-          {{ tag }}
-        </span>
-      </div>
-      
-      <div class="d-flex align-items-center mb-3">
-        <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none">
-          <img 
-            :src="post.authorAvatar" 
-            class="rounded-circle me-2 cursor-pointer" 
-            width="40" 
-            height="40" 
-            :alt="post.authorName"
-          >
-        </router-link>
-        <div class="flex-grow-1">
-          <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none text-dark">
-            <strong class="d-block cursor-pointer hover-underline">{{ post.authorName }}</strong>
-          </router-link>
-          <div class="d-flex align-items-center gap-2">
-            <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
-            <span class="text-muted small">•</span>
-            <small class="text-muted">
-              <i class="bi bi-book"></i> {{ readingTime }} phút đọc
-            </small>
-          </div>
-        </div>
+
+    <div class="card-body p-3 pt-2">
+      <!-- 4. Engagement Bar (Stats) -->
+      <div class="d-flex justify-content-between align-items-center px-1 mb-2">
+         <div class="stats-icons d-flex align-items-center">
+            <div class="icon-circle bg-primary text-white me-1">
+               <i class="bi bi-hand-thumbs-up-fill" style="font-size: 10px;"></i>
+            </div>
+            <span class="text-muted small">{{ likesCount }}</span>
+         </div>
+         <div class="text-muted small">
+            {{ commentsCount }} bình luận
+         </div>
       </div>
 
-      <!-- Thống kê Like & Comments -->
-      <div class="post-stats d-flex gap-3 mb-3 pb-3 border-bottom">
-        <span class="text-muted small">
-          <i class="bi bi-heart-fill text-danger"></i> {{ likesCount }} lượt thích
-        </span>
-        <span class="text-muted small">
-          <i class="bi bi-chat-dots-fill text-primary"></i> {{ commentsCount }} bình luận
-        </span>
-      </div>
+      <hr class="my-2 mx-1 opacity-10">
 
-      <!-- Action Buttons -->
-      <div class="post-actions d-flex gap-2 mb-3">
-        <!-- Like Button -->
+      <!-- 5. Action Buttons -->
+      <div class="d-flex justify-content-between px-1">
         <button 
-          @click="handleLike" 
-          class="btn btn-outline-danger btn-sm flex-grow-1"
-          :class="{ 'active': isLiked }"
+          @click.stop="handleLike" 
+          class="btn flex-grow-1 action-btn py-2"
+          :class="{ 'text-primary active-btn': isLiked }"
         >
-          <i class="bi" :class="isLiked ? 'bi-heart-fill' : 'bi-heart'"></i>
-          {{ isLiked ? 'Đã thích' : 'Thích' }}
+          <i class="bi" :class="isLiked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'"></i>
+          <span class="ms-2 fw-semibold">Thích</span>
         </button>
-
-        <!-- View Detail Button -->
-        <router-link 
-          :to="`/post/${post.id}`" 
-          class="btn btn-outline-primary btn-sm flex-grow-1"
-        >
-          <i class="bi bi-eye"></i> Xem chi tiết
+        <router-link :to="`/post/${post.id}`" class="btn flex-grow-1 action-btn py-2 text-decoration-none" @click.stop>
+          <i class="bi bi-chat-left"></i>
+          <span class="ms-2 fw-semibold">Bình luận</span>
         </router-link>
-      </div>
-
-      <!-- Edit & Delete Buttons (chỉ hiển thị cho tác giả) -->
-      <div v-if="authStore.user && authStore.user.id === post.authorId" class="d-flex gap-2">
-        <button @click="$emit('edit', post)" class="btn btn-warning btn-sm flex-grow-1">
-          <i class="bi bi-pencil"></i> Sửa
-        </button>
-        <button @click="handleDelete" class="btn btn-danger btn-sm flex-grow-1">
-          <i class="bi bi-trash"></i> Xóa
+        <button class="btn flex-grow-1 action-btn py-2 d-none d-sm-block">
+          <i class="bi bi-share"></i>
+          <span class="ms-2 fw-semibold">Chia sẻ</span>
         </button>
       </div>
     </div>
   </div>
 </template>
 
+
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -120,6 +134,47 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['edit', 'delete'])
+
+const showDropdown = ref(false)
+
+const toggleDropdown = () => {
+  showDropdown.value = !showDropdown.value
+}
+
+const closeDropdown = () => {
+  showDropdown.value = false
+}
+
+const handleEdit = () => {
+  showDropdown.value = false
+  emit('edit', props.post)
+}
+
+const handleDeleteClick = () => {
+  showDropdown.value = false
+  handleDelete()
+}
+
+onMounted(() => {
+  window.addEventListener('click', closeDropdown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', closeDropdown)
+})
+
+const handleCardClick = (event) => {
+  // Ignore click if it's on a button, link, or inside a dropdown
+  if (
+    event.target.closest('button') || 
+    event.target.closest('a') || 
+    event.target.closest('.dropdown') || 
+    event.target.closest('.badge-hashtag')
+  ) {
+    return
+  }
+  router.push(`/post/${props.post.id}`)
+}
 
 const filterByHashtag = (tag) => {
   router.push({ path: '/', query: { search: tag } })
@@ -209,13 +264,68 @@ const handleDelete = () => {
 
 <style scoped>
 .post-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: none;
+  border-radius: 8px;
 }
 
-.post-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+.action-btn {
+  border: none;
+  background: transparent;
+  color: #65676b;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.action-btn:hover {
+  background-color: #f2f2f2;
+}
+
+.active-btn {
+  color: #0866ff !important;
+}
+
+.badge-hashtag {
+  font-size: 0.95rem;
+  color: #0866ff;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.badge-hashtag:hover {
+  text-decoration: underline;
+}
+
+.icon-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-ghost-dark {
+  background: transparent;
+  border: none;
+  color: #65676b;
+  transition: background 0.2s;
+}
+
+.btn-ghost-dark:hover {
+  background-color: #f2f2f2;
+}
+
+.hover-underline:hover {
+  text-decoration: underline !important;
+}
+
+.x-small {
+  font-size: 0.75rem;
 }
 
 /* Images Grid Styles */
@@ -225,15 +335,15 @@ const handleDelete = () => {
   width: 100%;
   aspect-ratio: 16/9;
   overflow: hidden;
-  background: #f0f0f0;
+  background: #f0f2f5;
 }
 
 .grid-layout.cols-1 { grid-template-columns: 1fr; aspect-ratio: auto; }
-.grid-layout.cols-1 .grid-item img { max-height: 500px; object-fit: cover; }
+.grid-layout.cols-1 .grid-item img { max-height: 500px; width: 100%; object-fit: contain; }
 
 .grid-layout.cols-2 { grid-template-columns: 1fr 1fr; }
 .grid-layout.cols-3 { 
-  grid-template-columns: 1fr 1fr; 
+  grid-template-columns: 1.5fr 1fr; 
   grid-template-rows: 1fr 1fr;
 }
 .grid-layout.cols-3 .grid-item:first-child { grid-row: span 2; } 
@@ -244,6 +354,7 @@ const handleDelete = () => {
   position: relative;
   width: 100%;
   height: 100%;
+  cursor: pointer;
 }
 
 .grid-item img {
@@ -263,44 +374,6 @@ const handleDelete = () => {
   justify-content: center;
   font-size: 2rem;
   font-weight: bold;
-}
-
-.card-title {
-  color: #2c3e50;
-  font-size: 1.25rem;
-  line-height: 1.4;
-}
-
-.card-text {
-  line-height: 1.5;
-  margin-bottom: 1.25rem;
-}
-
-.btn-outline-danger.active {
-  background-color: #dc3545;
-  color: white;
-  border-color: #dc3545;
-}
-
-.btn-outline-danger:hover {
-  background-color: #dc3545;
-  color: white;
-}
-
-.post-stats {
-  font-size: 0.9rem;
-}
-
-.post-actions .btn {
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.post-actions .btn:hover {
-  transform: scale(1.05);
-}
-.hover-underline:hover {
-  text-decoration: underline !important;
 }
 
 .cursor-pointer {
