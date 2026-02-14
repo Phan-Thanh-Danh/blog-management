@@ -576,9 +576,16 @@ const deletePost = () => {
 
 .post-content {
   font-size: 1.125rem;
-  line-height: 1.8;
+  line-height: 1.6;
   color: #333;
-  white-space: pre-wrap;
+}
+
+.post-content :deep(p) {
+  margin-bottom: 1.25rem;
+}
+
+.post-content :deep(p:last-child) {
+  margin-bottom: 0;
 }
 
 .post-actions-detail {

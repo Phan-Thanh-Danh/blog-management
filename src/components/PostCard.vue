@@ -268,7 +268,8 @@ const handleDelete = () => {
 }
 
 .card-text {
-  line-height: 1.6;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
 }
 
 .btn-outline-danger.active {
