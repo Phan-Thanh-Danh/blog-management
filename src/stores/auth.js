@@ -306,9 +306,15 @@ export const useAuthStore = defineStore('auth', () => {
     if (userIndex !== -1) {
       users.value[userIndex] = {
         ...users.value[userIndex],
-        name: userData.name,
-        email: userData.email,
+        name: userData.name || users.value[userIndex].name,
+        email: userData.email || users.value[userIndex].email,
         avatar: userData.avatar || users.value[userIndex].avatar,
+        coverPhoto: userData.coverPhoto || users.value[userIndex].coverPhoto || 'https://images.unsplash.com/photo-1549247793-5d0f529d1a12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80',
+        bio: userData.bio !== undefined ? userData.bio : users.value[userIndex].bio,
+        birthday: userData.birthday || users.value[userIndex].birthday,
+        gender: userData.gender || users.value[userIndex].gender,
+        relationship: userData.relationship || users.value[userIndex].relationship,
+        links: userData.links || users.value[userIndex].links || [],
         ...(userData.password && { password: userData.password })
       }
 
