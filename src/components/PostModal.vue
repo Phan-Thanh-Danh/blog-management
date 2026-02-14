@@ -91,18 +91,6 @@
                   <button type="button" class="btn btn-light rounded-circle btn-icon shadow-sm" @click="showImageUpload = true" title="Ảnh/Video">
                     <i class="bi bi-images text-success"></i>
                   </button>
-                  <button type="button" class="btn btn-light rounded-circle btn-icon shadow-sm" title="Gắn thẻ người khác">
-                    <i class="bi bi-person-plus-fill text-primary"></i>
-                  </button>
-                  <button type="button" class="btn btn-light rounded-circle btn-icon shadow-sm" title="Cảm xúc/Hoạt động">
-                    <i class="bi bi-emoji-smile text-warning"></i>
-                  </button>
-                  <button type="button" class="btn btn-light rounded-circle btn-icon shadow-sm" title="Check in">
-                    <i class="bi bi-geo-alt-fill text-danger"></i>
-                  </button>
-                  <button type="button" class="btn btn-light rounded-circle btn-icon shadow-sm" title="Sự kiện trong đời">
-                    <i class="bi bi-flag-fill text-secondary"></i>
-                  </button>
                 </div>
               </div>
             </div>
