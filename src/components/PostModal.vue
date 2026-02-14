@@ -152,20 +152,22 @@ const resetForm = () => {
   showImageUpload.value = false
 }
 
-watch(() => props.initialData, (newData) => {
-  if (props.mode === 'edit' && newData && Object.keys(newData).length > 0) {
+const syncForm = () => {
+  if (props.mode === 'edit' && props.initialData && Object.keys(props.initialData).length > 0) {
     form.value = {
-      id: newData.id,
-      title: newData.title || '',
-      category: newData.category || '',
-      content: newData.content || '',
-      images: newData.images ? [...newData.images] : (newData.image ? [newData.image] : [])
+      id: props.initialData.id,
+      title: props.initialData.title || '',
+      category: props.initialData.category || '',
+      content: props.initialData.content || '',
+      images: props.initialData.images ? [...props.initialData.images] : (props.initialData.image ? [props.initialData.image] : [])
     }
     if (form.value.images.length > 0) showImageUpload.value = true
   } else {
     resetForm()
   }
-}, { immediate: true })
+}
+
+watch([() => props.initialData, () => props.mode], syncForm, { immediate: true, deep: true })
 
 onMounted(() => {
   if (modalRef.value) {
@@ -173,7 +175,10 @@ onMounted(() => {
   }
 })
 
-const show = () => modalInstance?.show()
+const show = () => {
+  syncForm()
+  modalInstance?.show()
+}
 const hide = () => modalInstance?.hide()
 
 defineExpose({ show, hide })
