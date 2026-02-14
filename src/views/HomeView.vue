@@ -7,7 +7,7 @@
           <div class="nav-sidebar pe-2">
             <!-- Profile Shortcut -->
             <router-link v-if="authStore.isAuthenticated" :to="`/profile`" class="nav-item-link mb-1">
-              <img :src="authStore.user?.avatar" class="rounded-circle border me-3" width="36" height="36" style="object-fit: cover;">
+              <img :src="authStore.user?.avatar" class="rounded-circle border border-dark me-3" width="36" height="36" style="object-fit: cover;">
               <span class="fw-bold">{{ authStore.user?.name }}</span>
             </router-link>
 
@@ -17,7 +17,7 @@
               class="nav-item-link mb-1" 
               :class="{ active: !searchFilter && feedType === 'all' }"
             >
-              <i class="bi bi-house-door-fill fs-5 me-3 text-primary"></i>
+              <i class="bi bi-house-door-fill fs-5 me-3 text-black"></i>
               <span class="fw-semibold">Trang chủ</span>
             </router-link>
 
@@ -28,13 +28,13 @@
               class="nav-item-link mb-1" 
               :class="{ active: feedType === 'following' }"
             >
-              <i class="bi bi-people-fill fs-5 me-3 text-info"></i>
-              <span class="fw-semibold">Bạn bè (Đang theo dõi)</span>
+              <i class="bi bi-people-fill fs-5 me-3 text-black"></i>
+              <span class="fw-semibold">Đang theo dõi</span>
             </a>
 
-            <hr class="my-2 px-3">
+            <hr class="my-2 px-3 border-dark">
 
-            <h6 class="text-muted fw-bold px-3 mb-2 small text-uppercase">Danh mục</h6>
+            <h6 class="text-black fw-bold px-3 mb-2 small text-uppercase">Danh mục</h6>
             <div class="categories-list">
                <a 
                  v-for="cat in authStore.categories" 
@@ -44,7 +44,7 @@
                  :class="{ active: searchFilter === cat }"
                  @click.prevent="searchFilter = cat"
                >
-                 <i class="bi bi-hash fs-5 me-3 text-secondary"></i>
+                 <i class="bi bi-hash fs-5 me-3 text-black"></i>
                  <span>{{ cat }}</span>
                </a>
             </div>
@@ -55,23 +55,23 @@
         <div class="col-lg-6">
           <div class="feed-container mx-auto" style="max-width: 600px;">
             <!-- Post Composer (Facebook Style) -->
-            <div v-if="authStore.isAuthenticated" class="card shadow-sm border-0 mb-4 p-3 composer-card">
+            <div v-if="authStore.isAuthenticated" class="card shadow-none border border-dark mb-4 p-3 composer-card rounded-3">
               <div class="d-flex align-items-center gap-2">
-                <img :src="authStore.user?.avatar" class="rounded-circle border" width="40" height="40" style="object-fit: cover;">
-                <button @click="openCreateModal" class="flex-grow-1 btn btn-light rounded-pill px-4 py-2 text-muted text-start border-0 shadow-none hover-bg-gray">
+                <img :src="authStore.user?.avatar" class="rounded-circle border border-dark" width="40" height="40" style="object-fit: cover;">
+                <button @click="openCreateModal" class="flex-grow-1 btn btn-light rounded-pill px-4 py-2 text-muted text-start border border-dark shadow-none hover-bg-gray bg-white">
                   {{ authStore.user?.name }} ơi, bạn đang nghĩ gì thế?
                 </button>
               </div>
-              <hr class="my-3 opacity-10">
+              <hr class="my-3 border-dark">
               <div class="d-flex justify-content-around">
-                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2">
-                  <i class="bi bi-camera-video-fill text-danger me-2"></i> Video trực tiếp
+                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 text-black fw-bold">
+                  <i class="bi bi-camera-video-fill me-2"></i> Trực tiếp
                 </button>
-                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2">
-                  <i class="bi bi-images text-success me-2"></i> Ảnh/video
+                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 text-black fw-bold">
+                  <i class="bi bi-images me-2"></i> Ảnh/video
                 </button>
-                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 d-none d-sm-block">
-                  <i class="bi bi-emoji-smile text-warning me-2"></i> Cảm xúc
+                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 d-none d-sm-block text-black fw-bold">
+                  <i class="bi bi-emoji-smile me-2"></i> Cảm xúc
                 </button>
               </div>
             </div>
@@ -80,34 +80,34 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                <h5 class="fw-bold mb-0">Bài viết</h5>
                <div class="dropdown">
-                  <button class="btn btn-light btn-sm border-0 fw-semibold dropdown-toggle shadow-none" data-bs-toggle="dropdown">
+                  <button class="btn btn-white border border-dark btn-sm fw-bold dropdown-toggle shadow-none rounded-pill px-3" data-bs-toggle="dropdown">
                     Lọc: {{ sortBy === 'newest' ? 'Mới nhất' : sortBy === 'oldest' ? 'Cũ nhất' : 'Phổ biến' }}
                   </button>
-                  <ul class="dropdown-menu shadow-sm border-0">
+                  <ul class="dropdown-menu shadow-sm border border-dark rounded-0">
                     <li><a class="dropdown-item" @click.prevent="sortBy = 'newest'" href="#">Mới nhất</a></li>
                     <li><a class="dropdown-item" @click.prevent="sortBy = 'oldest'" href="#">Cũ nhất</a></li>
-                    <li><a class="dropdown-item" @click.prevent="sortBy = 'mostLiked'" href="#">Nhiều like nhất</a></li>
+                    <li><a class="dropdown-item" @click.prevent="sortBy = 'mostLiked'" href="#">Phổ biến nhất</a></li>
                   </ul>
                </div>
             </div>
 
             <!-- Active Filter Badge -->
             <div v-if="searchFilter" class="mb-3 px-1">
-               <div class="badge bg-white text-primary border rounded-pill py-2 px-3 d-inline-flex align-items-center shadow-sm">
+               <div class="badge bg-black text-white border border-dark rounded-pill py-2 px-3 d-inline-flex align-items-center shadow-sm">
                   # {{ searchFilter }}
                   <i class="bi bi-x-lg ms-2 cursor-pointer" @click="clearFilter" style="font-size: 10px;"></i>
                </div>
             </div>
 
             <!-- Empty State -->
-            <div v-if="sortedPosts.length === 0" class="empty-state text-center py-5 shadow-sm bg-white rounded-3 mb-4">
-              <i class="bi bi-inbox display-1 text-muted opacity-25"></i>
+            <div v-if="sortedPosts.length === 0" class="empty-state text-center py-5 border border-dark bg-white rounded-3 mb-4">
+              <i class="bi bi-inbox display-1 text-black opacity-25"></i>
               <h4 class="mt-4 fw-bold">Chưa có bài viết nào</h4>
-              <p class="text-muted mb-4">
+              <p class="text-dark mb-4 opacity-75">
                 {{ feedType === 'following' ? 'Theo dõi ai đó để xem bài viết của họ!' : 'Hãy là người đầu tiên chia sẻ câu chuyện của mình.' }}
               </p>
-              <button v-if="feedType === 'following'" @click="feedType = 'all'" class="btn btn-primary rounded-pill px-4">Khám phá ngay</button>
-              <button v-else-if="authStore.isAuthenticated" @click="openCreateModal" class="btn btn-primary rounded-pill px-4">Đăng bài ngay</button>
+              <button v-if="feedType === 'following'" @click="feedType = 'all'" class="btn btn-black rounded-pill px-4">Khám phá ngay</button>
+              <button v-else-if="authStore.isAuthenticated" @click="openCreateModal" class="btn btn-black rounded-pill px-4">Đăng bài ngay</button>
             </div>
 
             <!-- Posts List -->
@@ -130,7 +130,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3 px-2">
                   <h6 class="text-muted fw-bold mb-0 text-uppercase small ls-1">Gợi ý theo dõi</h6>
                 </div>
-                <div class="list-group list-group-flush rounded-3 overflow-hidden shadow-sm bg-white border">
+                <div class="list-group list-group-flush rounded-3 overflow-hidden bg-white border border-dark">
                    <div v-for="user in suggestedUsers" :key="user.id" class="list-group-item border-0 py-3">
                      <div class="d-flex align-items-center">
                         <img :src="user.avatar" class="rounded-circle border me-3" width="40" height="40" style="object-fit: cover;">

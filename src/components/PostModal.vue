@@ -83,26 +83,25 @@
             </div>
 
             <!-- Add to your post bar -->
-            <div class="card mb-3 p-2 border shadow-none bg-white">
-              <div class="d-flex align-items-center justify-content-between">
-                <span class="fw-bold small ms-2 d-none d-sm-inline">Thêm vào bài viết của bạn</span>
-                <span class="fw-bold small ms-2 d-sm-none">Thêm vào bài viết</span>
-                <div class="d-flex gap-1">
-                  <button type="button" class="btn btn-light rounded-circle btn-icon shadow-sm" @click="showImageUpload = true" title="Ảnh/Video">
-                    <i class="bi bi-images text-success"></i>
-                  </button>
-                </div>
-              </div>
+            <div class="mb-3 d-flex align-items-center justify-content-between p-2 rounded-2 border border-dark">
+            <span class="small fw-bold text-black">Thêm vào bài viết</span>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-ghost shadow-none p-1 text-black" @click="showImageUpload = true"><i class="bi bi-images fs-5"></i></button>
+              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-person-plus-fill fs-5"></i></button>
+              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-emoji-smile fs-5"></i></button>
+              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-geo-alt-fill fs-5"></i></button>
+              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-three-dots fs-5"></i></button>
             </div>
-
-            <button 
-              type="submit" 
-              class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded"
-              :disabled="loading || !form.title || !form.content"
-            >
-              <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-              {{ mode === 'create' ? 'Đăng' : 'Cập nhật' }}
-            </button>
+          </div>
+          
+          <button 
+            type="submit" 
+            class="btn btn-black w-100 fw-bold py-2 rounded-2 border-dark"
+            :disabled="loading || !form.title || !form.content"
+          >
+            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+            {{ mode === 'create' ? 'Đăng' : 'Cập nhật' }}
+          </button>
           </form>
         </div>
       </div>

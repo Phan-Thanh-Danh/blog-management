@@ -73,7 +73,7 @@
                 <button 
                   @click="handleLike" 
                   class="btn flex-grow-1 action-btn py-2"
-                  :class="{ 'text-primary active-btn': isLiked }"
+                  :class="{ 'text-black active-btn': isLiked }"
                 >
                   <i class="bi" :class="isLiked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'"></i>
                   <span class="ms-2 fw-semibold">Thích</span>

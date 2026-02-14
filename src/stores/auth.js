@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   const posts = ref([])
   const comments = ref([])
   const likes = ref([])
+  const commentLikes = ref([])
   const categories = ref([
     'Công nghệ',
     'Review',
@@ -53,6 +54,9 @@ export const useAuthStore = defineStore('auth', () => {
     if (savedUsers) users.value = JSON.parse(savedUsers)
     if (savedUser) user.value = JSON.parse(savedUser)
     if (savedLikes) likes.value = JSON.parse(savedLikes)
+    if (localStorage.getItem('commentLikes')) {
+      commentLikes.value = JSON.parse(localStorage.getItem('commentLikes'))
+    }
 
     // Lọc bỏ các bài viết không hợp lệ
     if (savedPosts) {
@@ -299,6 +303,35 @@ export const useAuthStore = defineStore('auth', () => {
     return likes.value.filter(l => l.postId === postId).length
   }
 
+  // TOGGLE LIKE BÌNH LUẬN
+  const toggleCommentLike = (commentId) => {
+    if (!user.value) throw new Error('Bạn cần đăng nhập để thích bình luận')
+
+    const index = commentLikes.value.findIndex(
+      l => l.commentId === commentId && l.userId === user.value.id
+    )
+
+    if (index !== -1) {
+      commentLikes.value.splice(index, 1)
+    } else {
+      commentLikes.value.push({
+        id: Date.now(),
+        commentId: commentId,
+        userId: user.value.id,
+        createdAt: new Date().toISOString()
+      })
+    }
+
+    localStorage.setItem('commentLikes', JSON.stringify(commentLikes.value))
+  }
+
+  const isCommentLiked = (commentId) => {
+    if (!user.value) return false
+    return commentLikes.value.some(
+      l => l.commentId === commentId && l.userId === user.value.id
+    )
+  }
+
   // CẬP NHẬT THÔNG TIN CÁ NHÂN
   const updateProfile = (userData) => {
     if (!user.value) throw new Error('Bạn cần đăng nhập')
@@ -388,8 +421,9 @@ export const useAuthStore = defineStore('auth', () => {
     toggleLike,
     isPostLiked,
     getPostLikesCount,
+    toggleCommentLike,
+    isCommentLiked,
     updateProfile,
-    toggleFollow,
     toggleFollow,
     isFollowing,
     getFollowingUsers,

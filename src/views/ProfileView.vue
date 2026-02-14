@@ -28,47 +28,42 @@
             <input type="file" ref="avatarInput" class="d-none" @change="handleAvatarUpload" accept="image/*">
           </div>
           
-          <div class="header-info ms-4 mb-3 flex-grow-1">
-            <h1 class="display-6 fw-bold mb-1">{{ targetUser?.name }}</h1>
-            <p class="text-muted mb-0 fw-semibold">{{ friendsCount }} người bạn • {{ myPosts.length }} bài viết</p>
-          </div>
-
-          <div class="header-actions mb-3 d-flex gap-2">
-            <button v-if="isMyProfile" class="btn btn-primary px-4 fw-semibold" @click="activeTab = 'edit'">
-              <i class="bi bi-pencil-fill me-1"></i> Chỉnh sửa trang cá nhân
-            </button>
-            <div v-else class="d-flex gap-2">
-              <button 
-                @click="handleToggleFollow" 
-                class="btn px-4 fw-semibold"
-                :class="isFollowingTarget ? 'btn-light border' : 'btn-primary'"
-              >
-                <i class="bi" :class="isFollowingTarget ? 'bi-person-check-fill' : 'bi-person-plus-fill'"></i>
-                {{ isFollowingTarget ? ' Đang theo dõi' : ' Theo dõi' }}
-              </button>
-              <button class="btn btn-light px-4 fw-semibold border shadow-sm">
-                <i class="bi bi-messenger me-1"></i> Nhắn tin
-              </button>
+          <div class="header-info ms-4 mb-3 flex-grow-1 d-flex flex-column flex-md-row align-items-center align-items-md-end justify-content-between">
+            <div class="text-center text-md-start mb-3 mb-md-0">
+              <h1 class="display-6 fw-bold mb-1">{{ targetUser?.name }}</h1>
+              <p class="text-muted mb-0 fw-semibold">{{ friendsCount }} người bạn • {{ myPosts.length }} bài viết</p>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="header-actions d-flex gap-2">
+                <button v-if="isMyProfile" @click="activeTab = 'edit'" class="btn btn-outline-dark fw-bold rounded-2 px-4 shadow-sm">
+                  <i class="bi bi-pencil-fill me-2"></i> Chỉnh sửa trang cá nhân
+                </button>
+                <button v-else @click="handleToggleFollow" class="btn fw-bold px-4 rounded-2 shadow-sm" :class="isFollowingTarget ? 'btn-outline-dark' : 'btn-black'">
+                  <i class="bi" :class="isFollowingTarget ? 'bi-person-check-fill' : 'bi-person-plus-fill'"></i>
+                  {{ isFollowingTarget ? 'Đang theo dõi' : 'Theo dõi' }}
+                </button>
+                <button class="btn btn-outline-dark fw-bold rounded-2 px-3 shadow-sm">
+                  <i class="bi bi-three-dots"></i>
+                </button>
             </div>
           </div>
         </div>
-        
-        <hr class="mx-4 my-2">
-        
-        <!-- Sub-nav Tabs -->
-        <div class="px-4">
-          <ul class="nav nav-pills profile-nav gap-2">
+
+        <!-- Profile Tabs -->
+        <div class="profile-tabs border-top border-dark mt-3">
+          <ul class="nav">
             <li class="nav-item">
-              <button class="nav-link py-3 fw-semibold" :class="{ active: activeTab === 'posts' }" @click="activeTab = 'posts'">Bài viết</button>
+              <button class="nav-link px-4 py-3 fw-bold text-black border-bottom border-dark border-3" :class="{ active: activeTab === 'posts' }" @click="activeTab = 'posts'" style="margin-bottom: -1px;">Bài viết</button>
             </li>
             <li class="nav-item">
-              <button class="nav-link py-3 fw-semibold" :class="{ active: activeTab === 'about' }" @click="activeTab = 'about'">Giới thiệu</button>
+              <button class="nav-link px-4 py-3 fw-bold text-dark opacity-50" :class="{ active: activeTab === 'about' }" @click="activeTab = 'about'">Giới thiệu</button>
             </li>
             <li class="nav-item">
-              <button class="nav-link py-3 fw-semibold" :class="{ active: activeTab === 'following' }" @click="activeTab = 'following'">Đang theo dõi</button>
+              <button class="nav-link px-4 py-3 fw-bold text-dark opacity-50" :class="{ active: activeTab === 'following' }" @click="activeTab = 'following'">Đang theo dõi</button>
             </li>
             <li class="nav-item">
-              <button class="nav-link py-3 fw-semibold" :class="{ active: activeTab === 'followers' }" @click="activeTab = 'followers'">Người theo dõi</button>
+              <button class="nav-link px-4 py-3 fw-bold text-dark opacity-50" :class="{ active: activeTab === 'followers' }" @click="activeTab = 'followers'">Người theo dõi</button>
             </li>
           </ul>
         </div>
@@ -143,7 +138,7 @@
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Bạn bè / Người theo dõi</h5>
-                <a href="#" @click.prevent="activeTab = 'followers'" class="text-primary text-decoration-none small fw-semibold">Xem tất cả</a>
+                <a href="#" @click.prevent="activeTab = 'followers'" class="text-black text-decoration-none small fw-semibold">Xem tất cả</a>
               </div>
               <p class="text-muted small mb-3">{{ followersCount }} người theo dõi</p>
               <div class="friends-grid d-grid gap-3" style="grid-template-columns: repeat(3, 1fr);">

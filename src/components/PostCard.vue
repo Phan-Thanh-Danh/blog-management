@@ -280,14 +280,15 @@ const handleDelete = () => {
 }
 
 .active-btn {
-  color: #0866ff !important;
+  color: #000000 !important;
 }
 
 .badge-hashtag {
   font-size: 0.95rem;
-  color: #0866ff;
+  color: #000000;
   cursor: pointer;
   margin-right: 4px;
+  font-weight: 500;
 }
 
 .badge-hashtag:hover {
@@ -301,6 +302,7 @@ const handleDelete = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: #000000 !important;
 }
 
 .flex-center {

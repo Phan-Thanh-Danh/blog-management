@@ -21,17 +21,17 @@
               <p class="mb-0 small" style="line-height: 1.3;">{{ comment.content }}</p>
             </div>
             
-            <div class="comment-actions d-flex align-items-center gap-3 ms-2 mt-1 px-1">
-                <button class="btn btn-link btn-xs p-0 text-decoration-none fw-bold text-muted hover-underline">Thích</button>
+            <div class="d-flex gap-3 px-2">
                 <button 
-                  v-if="authStore.isAuthenticated"
-                  @click="toggleReply" 
-                  class="btn btn-link btn-xs p-0 text-decoration-none fw-bold text-muted hover-underline"
+                  @click="toggleLike" 
+                  class="btn btn-link p-0 fw-bold x-small text-decoration-none"
+                  :class="isLikedByMe ? 'text-black' : 'text-dark opacity-75'"
                 >
-                  Phản hồi
+                  Thích
                 </button>
-                <small class="text-muted x-small-text">{{ formatDate(comment.createdAt) }}</small>
-            </div>
+                <button @click="toggleReply" class="btn btn-link p-0 fw-bold x-small text-dark opacity-75 text-decoration-none">Phản hồi</button>
+                <span class="x-small text-dark opacity-50">{{ formatDate(comment.createdAt) }}</span>
+              </div>
         </div>
 
         <!-- Form trả lời -->
@@ -45,21 +45,20 @@
               style="object-fit: cover;"
               :alt="authStore.user.name"
             >
-            <div class="flex-grow-1 position-relative">
+            <div class="flex-grow-1">
               <textarea 
                 v-model="replyContent"
-                class="form-control form-control-sm rounded-4 bg-fb-gray border-0 py-2 pe-5"
+                class="form-control bg-light border-0 rounded-4 px-3 py-2"
                 rows="1"
                 placeholder="Viết phản hồi..."
-                @keydown.ctrl.enter="handleReply"
+                style="resize: none;"
+                @keydown.enter.prevent="handleReply"
               ></textarea>
-              <button @click="handleReply" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-primary text-decoration-none me-2">
-                <i class="bi bi-send-fill"></i>
-              </button>
+              <div class="d-flex justify-content-between align-items-center mt-1 px-2">
+                <small class="text-dark opacity-50" style="font-size: 11px;">Nhấn Enter để phản hồi</small>
+                <button @click="cancelReply" class="btn btn-link p-0 text-dark opacity-50 x-small-text text-decoration-none hover-underline">Hủy</button>
+              </div>
             </div>
-          </div>
-          <div class="ms-5 mt-1">
-            <button @click="cancelReply" class="btn btn-link p-0 text-muted x-small-text text-decoration-none">Hủy</button>
           </div>
         </div>
 
@@ -121,10 +120,20 @@ const formatDate = (dateString) => {
   })
 }
 
+const isLikedByMe = computed(() => authStore.isCommentLiked(props.comment.id))
+
 const toggleReply = () => {
   showReplyForm.value = !showReplyForm.value
   if (showReplyForm.value) {
     replyContent.value = ''
+  }
+}
+
+const toggleLike = () => {
+  try {
+    authStore.toggleCommentLike(props.comment.id)
+  } catch (error) {
+    alert(error.message)
   }
 }
 
