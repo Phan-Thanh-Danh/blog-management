@@ -124,12 +124,13 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import PostCard from '../components/PostCard.vue'
 import PostModal from '../components/PostModal.vue'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
 const sortBy = ref('newest')
@@ -166,14 +167,6 @@ watch(() => route.query.action, (action) => {
   }
 }, { immediate: true })
 
-const editForm = ref({
-  id: null,
-  title: '',
-  content: '',
-  image: ''
-})
-
-let editModal = null
 
 // Computed: Sắp xếp và Lọc posts
 const sortedPosts = computed(() => {
