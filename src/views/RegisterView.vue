@@ -1,13 +1,13 @@
 <template>
-  <div class="fb-register-page bg-fb-gray min-vh-100 d-flex flex-column align-items-center justify-content-center py-5">
+  <div class="auth-page bg-white min-vh-100 d-flex flex-column align-items-center justify-content-center py-5">
     <div class="mb-4">
-      <h1 class="fb-logo fw-bold text-primary" style="font-size: 3.5rem; letter-spacing: -1.5px;">facebook</h1>
+      <h1 class="auth-logo fw-bold text-black" style="font-size: 3.5rem; letter-spacing: -1.5px;">MyBlog</h1>
     </div>
     
-    <div class="card border-0 shadow-lg rounded-3 overflow-hidden bg-white" style="max-width: 432px; width: 100%;">
-      <div class="card-header bg-white border-bottom p-3">
-        <h2 class="fw-bold fs-3 mb-0">Đăng ký</h2>
-        <p class="text-muted small mb-0">Nhanh chóng và dễ dàng.</p>
+    <div class="card border border-dark shadow-sm rounded-3 overflow-hidden bg-white" style="max-width: 432px; width: 100%;">
+      <div class="card-header bg-white border-bottom border-dark p-3">
+        <h2 class="fw-bold fs-3 mb-0 text-black">Đăng ký</h2>
+        <p class="text-dark small mb-0 opacity-75">Nhanh chóng và dễ dàng trong không gian tối giản.</p>
       </div>
       
       <div class="card-body p-3">
@@ -17,7 +17,7 @@
               <input 
                 v-model="form.name" 
                 type="text" 
-                class="form-control bg-light-gray x-small-padding" 
+                class="form-control border-dark rounded-2 x-small-padding" 
                 required
                 placeholder="Họ và tên"
               >
@@ -28,7 +28,7 @@
             <input 
               v-model="form.email" 
               type="email" 
-              class="form-control bg-light-gray x-small-padding" 
+              class="form-control border-dark rounded-2 x-small-padding" 
               required
               placeholder="Số di động hoặc email"
             >
@@ -38,13 +38,13 @@
             <input 
               v-model="form.password" 
               :type="showPassword ? 'text' : 'password'"
-              class="form-control bg-light-gray x-small-padding" 
+              class="form-control border-dark rounded-2 x-small-padding" 
               required
               minlength="6"
               placeholder="Mật khẩu mới"
             >
             <div class="password-strength mt-2 px-1">
-              <div class="progress" style="height: 4px;">
+              <div class="progress rounded-pill border border-dark" style="height: 6px; background-color: #fff;">
                 <div 
                   class="progress-bar" 
                   :class="passwordStrengthClass"
@@ -52,8 +52,8 @@
                 ></div>
               </div>
               <div class="d-flex justify-content-between mt-1">
-                <small class="text-muted" style="font-size: 10px;">Độ bảo mật: {{ passwordStrengthText }}</small>
-                <button type="button" @click="showPassword = !showPassword" class="btn btn-link p-0 text-muted x-small-text text-decoration-none">
+                <small class="text-black" style="font-size: 10px;">Độ bảo mật: {{ passwordStrengthText }}</small>
+                <button type="button" @click="showPassword = !showPassword" class="btn btn-link p-0 text-black x-small-text text-decoration-underline shadow-none">
                   {{ showPassword ? 'Ẩn' : 'Hiện' }}
                 </button>
               </div>
@@ -64,68 +64,68 @@
             <input 
               v-model="form.confirmPassword" 
               type="password" 
-              class="form-control bg-light-gray x-small-padding" 
+              class="form-control border-dark rounded-2 x-small-padding" 
               required
               placeholder="Xác nhận mật khẩu"
             >
           </div>
 
           <div class="mb-3">
-            <label class="form-label x-small-text text-muted mb-1">Ngày sinh <i class="bi bi-question-circle-fill"></i></label>
+            <label class="form-label x-small-text text-black fw-bold mb-1">Ngày sinh <i class="bi bi-question-circle-fill"></i></label>
             <div class="row g-2">
               <div class="col-4">
-                <select class="form-select x-small-padding border-secondary-subtle"><option v-for="d in 31" :key="d">{{d}}</option></select>
+                <select class="form-select x-small-padding border-dark rounded-2 shadow-none"><option v-for="d in 31" :key="d">{{d}}</option></select>
               </div>
               <div class="col-4">
-                <select class="form-select x-small-padding border-secondary-subtle"><option v-for="m in 12" :key="m">Tháng {{m}}</option></select>
+                <select class="form-select x-small-padding border-dark rounded-2 shadow-none"><option v-for="m in 12" :key="m">Tháng {{m}}</option></select>
               </div>
               <div class="col-4">
-                <select class="form-select x-small-padding border-secondary-subtle"><option v-for="y in 100" :key="y">{{2024 - y + 1}}</option></select>
+                <select class="form-select x-small-padding border-dark rounded-2 shadow-none"><option v-for="y in 100" :key="y">{{2024 - y + 1}}</option></select>
               </div>
             </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label x-small-text text-muted mb-1">Giới tính <i class="bi bi-question-circle-fill"></i></label>
+            <label class="form-label x-small-text text-black fw-bold mb-1">Giới tính <i class="bi bi-question-circle-fill"></i></label>
             <div class="row g-2">
               <div class="col-4">
-                <div class="border rounded p-2 d-flex justify-content-between align-items-center x-small-text">
-                  <label class="form-check-label px-2">Nữ</label>
-                  <input class="form-check-input" type="radio" name="gender" value="female">
+                <div class="border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center x-small-text bg-white">
+                  <label class="form-check-label px-1">Nữ</label>
+                  <input class="form-check-input border-dark" type="radio" name="gender" value="female">
                 </div>
               </div>
               <div class="col-4">
-                <div class="border rounded p-2 d-flex justify-content-between align-items-center x-small-text">
-                  <label class="form-check-label px-2">Nam</label>
-                  <input class="form-check-input" type="radio" name="gender" value="male">
+                <div class="border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center x-small-text bg-white">
+                  <label class="form-check-label px-1">Nam</label>
+                  <input class="form-check-input border-dark" type="radio" name="gender" value="male">
                 </div>
               </div>
               <div class="col-4">
-                <div class="border rounded p-2 d-flex justify-content-between align-items-center x-small-text">
-                  <label class="form-check-label px-2">Khác</label>
-                  <input class="form-check-input" type="radio" name="gender" value="other">
+                <div class="border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center x-small-text bg-white">
+                  <label class="form-check-label px-1">Khác</label>
+                  <input class="form-check-input border-dark" type="radio" name="gender" value="other">
                 </div>
               </div>
             </div>
           </div>
 
-          <p class="terms-text text-muted mb-4">
-            Bằng cách nhấp vào Đăng ký, bạn đồng ý với <a href="#">Điều khoản</a>, <a href="#">Chính sách quyền riêng tư</a> và <a href="#">Chính sách cookie</a> của chúng tôi. Bạn có thể nhận được thông báo qua SMS từ chúng tôi và có thể hủy nhận bất kỳ lúc nào.
+          <p class="terms-text text-black opacity-75 mb-4">
+            Bằng cách nhấp vào Đăng ký, bạn đồng ý với <a href="#" class="text-decoration-underline text-black fw-bold">Điều khoản</a> của nhà phát triển. Bạn có thể nhận được thông báo quan trọng qua email.
           </p>
 
-          <div v-if="error" class="alert alert-danger border-0 small py-2 mb-3">
+          <div v-if="error" class="alert alert-dark border border-dark rounded-2 small py-2 mb-3 bg-white text-black">
             {{ error }}
           </div>
 
           <div class="text-center mb-3">
-            <button type="submit" class="btn btn-success fw-bold px-5 py-2 fs-5" style="min-width: 194px;">
+            <button type="submit" class="btn btn-black fw-bold px-5 py-2 fs-5 rounded-pill w-100 border-dark">
               Đăng ký
             </button>
           </div>
 
           <div class="text-center">
-            <router-link to="/login" class="text-primary text-decoration-none small fw-bold">
-              Bạn đã có tài khoản?
+            <router-link to="/login" class="text-black text-decoration-underline small fw-bold">
+              Bạn đã có tài khoản? Quay lại đăng nhập
             </router-link>
           </div>
         </form>
@@ -162,9 +162,9 @@ const passwordStrength = computed(() => {
 })
 
 const passwordStrengthClass = computed(() => {
-  if (passwordStrength.value <= 33) return 'bg-danger'
-  if (passwordStrength.value <= 66) return 'bg-warning'
-  return 'bg-success'
+  if (passwordStrength.value <= 33) return 'bg-dark opacity-25'
+  if (passwordStrength.value <= 66) return 'bg-dark opacity-50'
+  return 'bg-dark'
 })
 
 const passwordStrengthText = computed(() => {
@@ -203,18 +203,26 @@ const handleRegister = () => {
 </script>
 
 <style scoped>
-.bg-fb-gray { background-color: #f0f2f5; }
-.text-primary { color: #0866ff !important; }
-.bg-light-gray { background-color: #f5f6f7; border: 1px solid #dddfe2; }
-.btn-success { background-color: #00a400; border: none; }
-.btn-success:hover { background-color: #008f00; }
+.auth-page {
+  background-color: #ffffff;
+}
 
-.fb-logo {
-  font-family: Arial, sans-serif;
+.auth-logo {
+  font-family: serif;
+}
+
+.btn-black {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.btn-black:hover {
+  background-color: #333333;
+  color: #ffffff;
 }
 
 .x-small-padding {
-  padding: 8px 10px;
+  padding: 10px 12px;
 }
 
 .x-small-text {
@@ -223,25 +231,16 @@ const handleRegister = () => {
 
 .terms-text {
   font-size: 11px;
-  line-height: 1.34;
-}
-
-.terms-text a {
-  text-decoration: none;
-  color: #385898;
-}
-
-.terms-text a:hover {
-  text-decoration: underline;
+  line-height: 1.5;
 }
 
 .form-select:focus, .form-control:focus {
-  border-color: #dddfe2;
-  box-shadow: none;
+  border-color: #000;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
 }
 
-.card-header {
-  border-top-left-radius: 8px !important;
-  border-top-right-radius: 8px !important;
+.form-check-input:checked {
+  background-color: #000;
+  border-color: #000;
 }
 </style>
