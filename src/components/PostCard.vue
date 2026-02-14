@@ -24,6 +24,18 @@
       </div>
       <p class="card-text text-muted">{{ truncateContent(post.content, 150) }}</p>
       
+      <!-- Hashtags chips -->
+      <div v-if="post.tags && post.tags.length > 0" class="mb-3 d-flex flex-wrap gap-1">
+        <span 
+          v-for="tag in post.tags" 
+          :key="tag"
+          @click.stop="filterByHashtag(tag)"
+          class="badge bg-light text-primary border small cursor-pointer hover-shadow"
+        >
+          {{ tag }}
+        </span>
+      </div>
+      
       <div class="d-flex align-items-center mb-3">
         <img 
           :src="post.authorAvatar" 
@@ -90,8 +102,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 const props = defineProps({
@@ -102,6 +116,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['edit', 'delete'])
+
+const filterByHashtag = (tag) => {
+  router.push({ path: '/', query: { search: tag } })
+}
 
 // Computed: Lấy danh sách ảnh để hiển thị
 const displayImages = computed(() => {

@@ -15,6 +15,32 @@ export const useAuthStore = defineStore('auth', () => {
     'Giải trí'
   ])
 
+  // Helper bóc tách Hashtag từ HTML content
+  const extractHashtags = (html) => {
+    if (!html) return []
+    // Xóa hết HTML tags để tránh bắt hashtag bên trong thuộc tính tag
+    const text = html.replace(/<[^>]*>?/gm, '')
+    // Tìm các từ bắt đầu bằng dấu #
+    const hashtags = text.match(/#[\w\u00C0-\u1EF9]+/g) || []
+    return [...new Set(hashtags)] // Bỏ trùng lặp
+  }
+
+  // Lấy danh sách Hashtag thịnh hành (Top 10)
+  const trendingTags = computed(() => {
+    const tagCount = {}
+    posts.value.forEach(post => {
+      const tags = post.tags || []
+      tags.forEach(tag => {
+        tagCount[tag] = (tagCount[tag] || 0) + 1
+      })
+    })
+
+    return Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(entry => entry[0])
+  })
+
   // Load dữ liệu từ localStorage khi khởi tạo
   const loadData = () => {
     const savedUsers = localStorage.getItem('users')
@@ -126,6 +152,7 @@ export const useAuthStore = defineStore('auth', () => {
       images: images,
       image: images.length > 0 ? images[0] : '', // Backward compatibility
       category: postData.category || 'Chung',
+      tags: extractHashtags(postData.content),
       authorId: user.value.id,
       authorName: user.value.name,
       authorAvatar: user.value.avatar,
@@ -169,6 +196,7 @@ export const useAuthStore = defineStore('auth', () => {
       images: finalImages,
       image: finalImages.length > 0 ? finalImages[0] : '',
       category: postData.category || post.category || 'Chung',
+      tags: extractHashtags(postData.content),
       updatedAt: new Date().toISOString()
     }
 
@@ -358,6 +386,8 @@ export const useAuthStore = defineStore('auth', () => {
     toggleFollow,
     isFollowing,
     getFollowingUsers,
-    getFollowersUsers
+    getFollowersUsers,
+    extractHashtags,
+    trendingTags
   }
 })

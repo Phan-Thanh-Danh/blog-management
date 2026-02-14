@@ -223,16 +223,19 @@
             <div class="card shadow-sm">
               <div class="card-body">
                 <h5 class="card-title fw-bold mb-3">
-                  <i class="bi bi-tags"></i> Xu hướng
+                  <i class="bi bi-tags"></i> Hashtag thịnh hành
                 </h5>
-                <div class="d-flex flex-wrap gap-2">
-                  <span @click="filterByTag('#VueJS')" class="badge bg-primary">#VueJS</span>
-                  <span @click="filterByTag('#JavaScript')" class="badge bg-success">#JavaScript</span>
-                  <span @click="filterByTag('#WebDev')" class="badge bg-danger">#WebDev</span>
-                  <span @click="filterByTag('#Frontend')" class="badge bg-warning text-dark">#Frontend</span>
-                  <span @click="filterByTag('#Coding')" class="badge bg-info">#Coding</span>
-                  <span @click="filterByTag('#Tech')" class="badge bg-secondary">#Tech</span>
+                <div v-if="authStore.trendingTags.length > 0" class="d-flex flex-wrap gap-2">
+                  <span 
+                    v-for="tag in authStore.trendingTags" 
+                    :key="tag"
+                    @click="filterByTag(tag)" 
+                    class="badge bg-light text-primary border cursor-pointer hover-shadow"
+                  >
+                    {{ tag }}
+                  </span>
                 </div>
+                <p v-else class="text-muted small mb-0">Chưa có hashtag nào phổ biến</p>
               </div>
             </div>
           </div>
@@ -342,12 +345,18 @@ const sortedPosts = computed(() => {
   
   // Lọc theo tìm kiếm hoặc danh mục
   if (searchFilter.value) {
-    const query = searchFilter.value.toLowerCase().replace('#', '')
+    const originalQuery = searchFilter.value.toLowerCase()
+    const queryWithoutHash = originalQuery.replace('#', '')
+    
     posts = posts.filter(post => {
-      const isCategoryMatch = post.category && post.category.toLowerCase() === query
-      const isTitleMatch = post.title.toLowerCase().includes(query)
-      const isContentMatch = post.content.toLowerCase().includes(query)
-      return isCategoryMatch || isTitleMatch || isContentMatch
+      // Ưu tiên khớp hashtag nếu query có dấu #
+      const isTagMatch = post.tags && post.tags.some(t => t.toLowerCase() === originalQuery)
+      
+      const isCategoryMatch = post.category && post.category.toLowerCase() === queryWithoutHash
+      const isTitleMatch = post.title.toLowerCase().includes(queryWithoutHash)
+      const isContentMatch = post.content.toLowerCase().includes(queryWithoutHash)
+      
+      return isTagMatch || isCategoryMatch || isTitleMatch || isContentMatch
     })
   }
 

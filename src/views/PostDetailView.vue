@@ -97,7 +97,7 @@
             </div>
 
             <!-- Nội dung bài viết -->
-            <div class="post-content mb-4" v-html="post.content"></div>
+            <div class="post-content mb-4" v-html="formattedContent" @click="handleContentClick"></div>
 
             <!-- Like & Stats -->
             <div class="post-actions-detail border-top border-bottom py-3">
@@ -422,6 +422,27 @@ const sharePost = () => {
   }).catch(err => {
     console.error('Không thể sao chép: ', err)
   })
+}
+
+// Computed: Format nội dung (biến #hashtag thành link)
+const formattedContent = computed(() => {
+  if (!post.value || !post.value.content) return ''
+  
+  // Regex tìm #hashtag (tránh bắt hashtag bên trong các tag HTML)
+  // Cách tiếp cận đơn giản: thay thế text sau khi bóc tách, hơặc dùng regex an toàn.
+  // Ở đây chúng ta bọc hashtag bằng một thẻ span có class đặc biệt để xử lý click
+  return post.value.content.replace(/(^|\s)(#[\w\u00C0-\u1EF9]+)/g, (match, p1, p2) => {
+    return `${p1}<a href="/?search=${encodeURIComponent(p2)}" class="hashtag-link text-primary text-decoration-none fw-bold" data-hashtag="${p2}">${p2}</a>`
+  })
+})
+
+const handleContentClick = (event) => {
+  const target = event.target
+  if (target.classList.contains('hashtag-link')) {
+    event.preventDefault()
+    const hashtag = target.getAttribute('data-hashtag')
+    router.push({ path: '/', query: { search: hashtag } })
+  }
 }
 
 const renderMarkdown = (text) => {

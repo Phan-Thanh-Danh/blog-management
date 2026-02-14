@@ -6,6 +6,7 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
+import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
   modelValue: {
@@ -24,6 +25,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
+const authStore = useAuthStore();
 const editorId = ref(props.id + '-' + Math.random().toString(36).substr(2, 9));
 let editorInstance = null;
 
@@ -42,15 +44,39 @@ onMounted(() => {
       'alignright alignjustify | bullist numlist outdent indent | ' +
       'removeformat | help',
     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-    initial_value: props.modelValue, // Use initial_value for TinyMCE
+    initial_value: props.modelValue,
     setup: (editor) => {
       editorInstance = editor;
+
+      // Autocompleter cho Hashtag
+      editor.ui.registry.addAutocompleter('hashtags', {
+        trigger: '#',
+        minChars: 0,
+        columns: 1,
+        fetch: (pattern) => {
+          const allTags = authStore.trendingTags
+          const filteredTags = allTags
+            .filter(tag => tag.toLowerCase().includes(pattern.toLowerCase()))
+            .map(tag => ({
+              value: tag,
+              text: tag
+            }))
+          
+          return new Promise((resolve) => {
+            resolve(filteredTags)
+          })
+        },
+        onAction: (autocompleteApi, rng, value) => {
+          editor.selection.setRng(rng)
+          editor.insertContent(value)
+          autocompleteApi.hide()
+        }
+      });
 
       editor.on('Change KeyUp', () => {
         emit('update:modelValue', editor.getContent());
       });
 
-      // Handle the case where props.modelValue updates after init
       editor.on('init', () => {
         if (props.modelValue) {
           editor.setContent(props.modelValue);
@@ -60,10 +86,10 @@ onMounted(() => {
   });
 });
 
-// Watch for external changes to modelValue (e.g., loading draft)
+// Watch for external changes (e.g., loading draft)
 watch(() => props.modelValue, (newValue) => {
   if (editorInstance && newValue !== editorInstance.getContent()) {
-    editorInstance.setContent(newValue);
+    editorInstance.setContent(newValue || '');
   }
 });
 
