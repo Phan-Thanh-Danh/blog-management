@@ -4,7 +4,7 @@
     <div class="profile-header bg-white shadow-sm mb-4">
       <div class="cover-container position-relative">
         <img 
-          :src="authStore.user.coverPhoto || 'https://images.unsplash.com/photo-1549247793-5d0f529d1a12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80'" 
+          :src="targetUser?.coverPhoto || 'https://images.unsplash.com/photo-1549247793-5d0f529d1a12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80'" 
           class="cover-photo" 
           alt="Cover"
         >
@@ -18,7 +18,7 @@
         <div class="header-content d-flex align-items-end px-4">
           <div class="avatar-wrapper position-relative">
             <img 
-              :src="authStore.user.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(authStore.user.name)" 
+              :src="targetUser?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(targetUser?.name || 'User')" 
               class="profile-avatar border border-4 border-white shadow" 
               alt="Avatar"
             >
@@ -29,7 +29,7 @@
           </div>
           
           <div class="header-info ms-4 mb-3 flex-grow-1">
-            <h1 class="display-6 fw-bold mb-1">{{ authStore.user.name }}</h1>
+            <h1 class="display-6 fw-bold mb-1">{{ targetUser?.name }}</h1>
             <p class="text-muted mb-0 fw-semibold">{{ friendsCount }} người bạn • {{ myPosts.length }} bài viết</p>
           </div>
 
@@ -38,8 +38,13 @@
               <i class="bi bi-pencil-fill me-1"></i> Chỉnh sửa trang cá nhân
             </button>
             <div v-else class="d-flex gap-2">
-              <button class="btn btn-primary px-4 fw-semibold">
-                <i class="bi bi-person-plus-fill me-1"></i> Thêm bạn bè
+              <button 
+                @click="handleToggleFollow" 
+                class="btn px-4 fw-semibold"
+                :class="isFollowingTarget ? 'btn-light border' : 'btn-primary'"
+              >
+                <i class="bi" :class="isFollowingTarget ? 'bi-person-check-fill' : 'bi-person-plus-fill'"></i>
+                {{ isFollowingTarget ? ' Đang theo dõi' : ' Theo dõi' }}
               </button>
               <button class="btn btn-light px-4 fw-semibold border shadow-sm">
                 <i class="bi bi-messenger me-1"></i> Nhắn tin
@@ -73,8 +78,6 @@
     <!-- Content Section -->
     <div class="container pb-5">
       <div class="row g-4">
-        <!-- Main Feed (Right Column in Facebook, but let's follow standard FB desktop: Intro on left, Feed on center/right) -->
-        
         <!-- Left Column: Intro & Details -->
         <div class="col-lg-5 col-xl-4 order-2 order-lg-1">
           <!-- Intro Card -->
@@ -82,8 +85,8 @@
             <div class="card-body">
               <h5 class="fw-bold mb-3">Giới thiệu</h5>
               
-              <div v-if="authStore.user.bio" class="text-center mb-4">
-                <p class="mb-2">{{ authStore.user.bio }}</p>
+              <div v-if="targetUser?.bio" class="text-center mb-4">
+                <p class="mb-2">{{ targetUser.bio }}</p>
                 <button v-if="isMyProfile" class="btn btn-light w-100 fw-semibold border" @click="activeTab = 'edit'">Chỉnh sửa tiểu sử</button>
               </div>
               <div v-else-if="isMyProfile" class="text-center mb-4">
@@ -91,20 +94,20 @@
               </div>
 
               <div class="intro-details d-flex flex-column gap-3">
-                <div v-if="authStore.user.relationship" class="d-flex align-items-center text-muted">
+                <div v-if="targetUser?.relationship" class="d-flex align-items-center text-muted">
                   <i class="bi bi-heart-fill me-3 fs-5"></i>
-                  <span>{{ authStore.user.relationship }}</span>
+                  <span>{{ targetUser.relationship }}</span>
                 </div>
-                <div v-if="authStore.user.birthday" class="d-flex align-items-center text-muted">
+                <div v-if="targetUser?.birthday" class="d-flex align-items-center text-muted">
                   <i class="bi bi-cake2-fill me-3 fs-5"></i>
-                  <span>Sinh nhật: {{ formatJoinDate(authStore.user.birthday) }}</span>
+                  <span>Sinh nhật: {{ formatJoinDate(targetUser.birthday) }}</span>
                 </div>
                 <div class="d-flex align-items-center text-muted">
                   <i class="bi bi-clock-fill me-3 fs-5"></i>
-                  <span>Tham gia từ {{ formatJoinDate(authStore.user.createdAt) }}</span>
+                  <span>Tham gia từ {{ formatJoinDate(targetUser?.createdAt) }}</span>
                 </div>
-                <div v-if="authStore.user.links && authStore.user.links.length > 0" class="d-flex flex-column gap-2 mt-1">
-                  <div v-for="(link, i) in authStore.user.links" :key="i" class="d-flex align-items-center text-primary">
+                <div v-if="targetUser?.links && targetUser.links.length > 0" class="d-flex flex-column gap-2 mt-1">
+                  <div v-for="(link, i) in targetUser.links" :key="i" class="d-flex align-items-center text-primary">
                     <i class="bi bi-link-45deg me-3 fs-5 text-muted"></i>
                     <a :href="link" target="_blank" class="text-decoration-none">{{ link }}</a>
                   </div>
@@ -148,6 +151,9 @@
                   <img :src="user.avatar" class="w-100 rounded border mb-1 aspect-square object-fit-cover">
                   <small class="d-block fw-semibold text-truncate">{{ user.name }}</small>
                 </div>
+                <div v-if="followersList.length === 0" class="text-center py-3 text-muted col-span-3">
+                  Không có người theo dõi
+                </div>
               </div>
             </div>
           </div>
@@ -158,9 +164,9 @@
           <!-- Post Composer (Facebook Style Shortcut) -->
           <div v-if="isMyProfile" class="card shadow-sm border-0 mb-4 p-3">
             <div class="d-flex align-items-center gap-3">
-              <img :src="authStore.user.avatar" class="rounded-circle border" width="40" height="40" style="object-fit: cover;">
+              <img :src="authStore.user?.avatar" class="rounded-circle border" width="40" height="40" style="object-fit: cover;">
               <button @click="openCreateModal" class="flex-grow-1 btn btn-light rounded-pill px-4 py-2 text-muted text-start border-0 shadow-none hover-bg-gray">
-                {{ authStore.user.name }} ơi, bạn đang nghĩ gì thế?
+                {{ authStore.user?.name }} ơi, bạn đang nghĩ gì thế?
               </button>
             </div>            
           </div>
@@ -177,9 +183,9 @@
 
             <div v-if="myPosts.length === 0" class="card shadow-sm border-0 p-5 text-center">
                 <i class="bi bi-file-earmark-text display-4 text-muted mb-3"></i>
-                <h5>Bạn chưa có bài viết nào</h5>
-                <p class="text-muted">Chia sẻ những câu chuyện của bạn ngay bây giờ!</p>
-                <button @click="openCreateModal" class="btn btn-primary px-4">Viết bài ngay</button>
+                <h5>{{ isMyProfile ? 'Bạn chưa có bài viết nào' : 'Người dùng này chưa có bài viết nào' }}</h5>
+                <p v-if="isMyProfile" class="text-muted">Chia sẻ những câu chuyện của bạn ngay bây giờ!</p>
+                <button v-if="isMyProfile" @click="openCreateModal" class="btn btn-primary px-4">Viết bài ngay</button>
             </div>
             <div v-else>
                 <PostCard 
@@ -192,8 +198,8 @@
             </div>
           </div>
 
-          <!-- Other Tabs (Simplified for now or full implementation) -->
-          <div v-if="activeTab === 'edit'" class="card shadow-sm border-0">
+          <!-- Edit Tab -->
+          <div v-if="activeTab === 'edit' && isMyProfile" class="card shadow-sm border-0">
             <div class="card-body p-4">
               <h5 class="fw-bold mb-4">Chỉnh sửa trang cá nhân</h5>
               <form @submit.prevent="handleUpdate">
@@ -237,7 +243,7 @@
             </div>
           </div>
 
-          <!-- Followers / Following (Simple list) -->
+          <!-- Followers / Following Tab -->
           <div v-if="activeTab === 'followers' || activeTab === 'following'" class="card shadow-sm border-0">
             <div class="card-body">
                <h5 class="fw-bold mb-4">{{ activeTab === 'followers' ? 'Người theo dõi' : 'Đang theo dõi' }}</h5>
@@ -247,7 +253,7 @@
                      <img :src="user.avatar" class="rounded border me-3" width="60" height="60" style="object-fit: cover;">
                      <h6 class="mb-0 fw-bold">{{ user.name }}</h6>
                    </div>
-                   <button @click="authStore.toggleFollow(user.id)" class="btn btn-light border btn-sm fw-semibold">
+                   <button v-if="authStore.user && user.id !== authStore.user.id" @click="authStore.toggleFollow(user.id)" class="btn btn-light border btn-sm fw-semibold">
                      {{ authStore.isFollowing(user.id) ? 'Bỏ theo dõi' : 'Theo dõi lại' }}
                    </button>
                  </div>
@@ -261,33 +267,33 @@
           <!-- About tab -->
           <div v-if="activeTab === 'about'" class="card shadow-sm border-0">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-4">Giới thiệu về {{ authStore.user.name }}</h5>
+                <h5 class="fw-bold mb-4">Giới thiệu về {{ targetUser?.name }}</h5>
                 <div class="list-group list-group-flush intro-details">
                     <div class="list-group-item px-0 py-3 d-flex align-items-center">
                         <i class="bi bi-clock-fill me-4 fs-4 text-muted"></i>
                         <div>
-                            <p class="mb-0 fw-semibold">Đã tham gia vào {{ formatJoinDate(authStore.user.createdAt) }}</p>
+                            <p class="mb-0 fw-semibold">Đã tham gia vào {{ formatJoinDate(targetUser?.createdAt) }}</p>
                             <small class="text-muted">Ngày gia nhập trang web</small>
                         </div>
                     </div>
-                    <div v-if="authStore.user.birthday" class="list-group-item px-0 py-3 d-flex align-items-center">
+                    <div v-if="targetUser?.birthday" class="list-group-item px-0 py-3 d-flex align-items-center">
                         <i class="bi bi-cake2-fill me-4 fs-4 text-muted"></i>
                         <div>
-                            <p class="mb-0 fw-semibold">Sinh ngày {{ formatJoinDate(authStore.user.birthday) }}</p>
+                            <p class="mb-0 fw-semibold">Sinh ngày {{ formatJoinDate(targetUser.birthday) }}</p>
                             <small class="text-muted">Ngày sinh nhật</small>
                         </div>
                     </div>
-                    <div v-if="authStore.user.relationship" class="list-group-item px-0 py-3 d-flex align-items-center">
+                    <div v-if="targetUser?.relationship" class="list-group-item px-0 py-3 d-flex align-items-center">
                         <i class="bi bi-heart-fill me-4 fs-4 text-muted"></i>
                         <div>
-                            <p class="mb-0 fw-semibold">{{ authStore.user.relationship }}</p>
+                            <p class="mb-0 fw-semibold">{{ targetUser.relationship }}</p>
                             <small class="text-muted">Tình trạng mối quan hệ</small>
                         </div>
                     </div>
                     <div class="list-group-item px-0 py-3 d-flex align-items-center">
                         <i class="bi bi-envelope-fill me-4 fs-4 text-muted"></i>
                         <div>
-                            <p class="mb-0 fw-semibold">{{ authStore.user.email }}</p>
+                            <p class="mb-0 fw-semibold">{{ targetUser?.email }}</p>
                             <small class="text-muted">Địa chỉ email</small>
                         </div>
                     </div>
@@ -309,13 +315,34 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { compressImage } from '../utils/imageHelper'
 import PostCard from '../components/PostCard.vue'
 import PostModal from '../components/PostModal.vue'
 
+const route = useRoute()
 const authStore = useAuthStore()
+
+// Profile State
+const targetUser = ref(null)
+const isMyProfile = computed(() => {
+  if (!authStore.user) return false
+  const routeId = route.params.id
+  return !routeId || String(routeId) === String(authStore.user.id)
+})
+
+const loadTargetUser = () => {
+  const routeId = route.params.id
+  if (!routeId || String(routeId) === String(authStore.user?.id)) {
+    targetUser.value = authStore.user
+  } else {
+    targetUser.value = authStore.users.find(u => String(u.id) === String(routeId)) || null
+  }
+}
+
+watch(() => route.params.id, loadTargetUser, { immediate: true })
 
 // Modal state
 const postModalRef = ref(null)
@@ -332,6 +359,19 @@ const openEditModal = (post) => {
   modalMode.value = 'edit'
   selectedPost.value = post
   postModalRef.value?.show()
+}
+
+const isFollowingTarget = computed(() => {
+  if (!authStore.user || !targetUser.value) return false
+  return authStore.isFollowing(targetUser.value.id)
+})
+
+const handleToggleFollow = async () => {
+  try {
+    await authStore.toggleFollow(targetUser.value.id)
+  } catch (err) {
+    alert(err.message)
+  }
 }
 
 // File inputs refs
@@ -358,11 +398,10 @@ const success = ref('')
 // Tab state
 const activeTab = ref('posts')
 
-const isMyProfile = computed(() => true) // Assuming for now, can extend for public views
-
-// Computed: Lấy bài viết của user hiện tại
+// Computed: Lấy bài viết của target user
 const myPosts = computed(() => {
-  return authStore.posts.filter(p => p.authorId === authStore.user?.id)
+  if (!targetUser.value) return []
+  return authStore.posts.filter(p => p.authorId === targetUser.value.id)
 })
 
 // Computed: Danh sách ảnh gần đây từ bài viết
@@ -380,14 +419,14 @@ const recentPhotos = computed(() => {
 
 // Computed: Danh sách người đang theo dõi
 const followingList = computed(() => {
-  if (!authStore.user) return []
-  return authStore.getFollowingUsers(authStore.user.id)
+  if (!targetUser.value) return []
+  return authStore.getFollowingUsers(targetUser.value.id)
 })
 
 // Computed: Danh sách người theo dõi
 const followersList = computed(() => {
-  if (!authStore.user) return []
-  return authStore.getFollowersUsers(authStore.user.id)
+  if (!targetUser.value) return []
+  return authStore.getFollowersUsers(targetUser.value.id)
 })
 
 const followingCount = computed(() => followingList.value.length)

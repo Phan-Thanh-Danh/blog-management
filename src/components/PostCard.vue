@@ -37,15 +37,19 @@
       </div>
       
       <div class="d-flex align-items-center mb-3">
-        <img 
-          :src="post.authorAvatar" 
-          class="rounded-circle me-2" 
-          width="40" 
-          height="40" 
-          :alt="post.authorName"
-        >
+        <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none">
+          <img 
+            :src="post.authorAvatar" 
+            class="rounded-circle me-2 cursor-pointer" 
+            width="40" 
+            height="40" 
+            :alt="post.authorName"
+          >
+        </router-link>
         <div class="flex-grow-1">
-          <strong class="d-block">{{ post.authorName }}</strong>
+          <router-link :to="`/profile/${post.authorId}`" class="text-decoration-none text-dark">
+            <strong class="d-block cursor-pointer hover-underline">{{ post.authorName }}</strong>
+          </router-link>
           <div class="d-flex align-items-center gap-2">
             <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
             <span class="text-muted small">•</span>
@@ -294,5 +298,12 @@ const handleDelete = () => {
 
 .post-actions .btn:hover {
   transform: scale(1.05);
+}
+.hover-underline:hover {
+  text-decoration: underline !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>
