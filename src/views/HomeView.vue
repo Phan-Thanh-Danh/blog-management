@@ -62,18 +62,6 @@
                   {{ authStore.user?.name }} ơi, bạn đang nghĩ gì thế?
                 </button>
               </div>
-              <hr class="my-3 border-dark">
-              <div class="d-flex justify-content-around">
-                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 text-black fw-bold">
-                  <i class="bi bi-camera-video-fill me-2"></i> Trực tiếp
-                </button>
-                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 text-black fw-bold">
-                  <i class="bi bi-images me-2"></i> Ảnh/video
-                </button>
-                <button @click="openCreateModal" class="btn btn-ghost-dark flex-grow-1 py-2 d-none d-sm-block text-black fw-bold">
-                  <i class="bi bi-emoji-smile me-2"></i> Cảm xúc
-                </button>
-              </div>
             </div>
 
             <!-- Feed Filters/Sort -->

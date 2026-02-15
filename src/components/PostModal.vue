@@ -87,10 +87,6 @@
             <span class="small fw-bold text-black">Thêm vào bài viết</span>
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-ghost shadow-none p-1 text-black" @click="showImageUpload = true"><i class="bi bi-images fs-5"></i></button>
-              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-person-plus-fill fs-5"></i></button>
-              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-emoji-smile fs-5"></i></button>
-              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-geo-alt-fill fs-5"></i></button>
-              <button type="button" class="btn btn-ghost shadow-none p-1 text-black"><i class="bi bi-three-dots fs-5"></i></button>
             </div>
           </div>
           
