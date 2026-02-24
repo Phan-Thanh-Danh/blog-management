@@ -33,8 +33,17 @@
               </div>
 
               <!-- Content Area -->
-              <h3 class="fw-bold mb-3 px-1">{{ post.title }}</h3>
-              <div class="post-body-content px-1 mb-4" v-html="formattedContent" @click="handleContentClick"></div>
+              <h3 class="fw-bold mb-3 px-1">{{ isTranslated ? translatedTitle : post.title }}</h3>
+              
+              <!-- AI Translation Badge -->
+              <div v-if="isTranslated" class="px-1 mb-2">
+                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-2">
+                  <i class="bi bi-translate me-2"></i>Đã dịch sang {{ targetLanguageLabel }}
+                  <button @click="resetTranslation" class="btn btn-sm p-0 ms-2 text-info fw-bold" style="font-size: 10px;">(Xem bản gốc)</button>
+                </span>
+              </div>
+
+              <div class="post-body-content px-1 mb-4" v-html="displayContent" @click="handleContentClick"></div>
 
               <!-- Image Grid -->
               <div v-if="displayImages.length > 0" class="image-grid-section -mx-3 mb-4">
@@ -85,6 +94,15 @@
                 <button @click="sharePost" class="btn flex-grow-1 action-btn py-2">
                   <i class="bi bi-share"></i>
                   <span class="ms-2 fw-semibold">Chia sẻ</span>
+                </button>
+                <button 
+                  @click="handleTranslate" 
+                  class="btn flex-grow-1 action-btn py-2"
+                  :disabled="isTranslating"
+                >
+                  <span v-if="isTranslating" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  <i v-else class="bi bi-translate"></i>
+                  <span class="ms-2 fw-semibold">{{ isTranslated ? 'Đã dịch' : 'Dịch' }}</span>
                 </button>
               </div>
             </div>
@@ -227,6 +245,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import CommentItem from '../components/CommentItem.vue'
 import PostModal from '../components/PostModal.vue'
+import { translateHTMLContent } from '../utils/geminiService'
+import { useNotificationStore } from '../stores/notification'
+
+const notificationStore = useNotificationStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -235,6 +257,13 @@ const authStore = useAuthStore()
 const commentContent = ref('')
 const commentInput = ref(null)
 const postModalRef = ref(null)
+
+// Translation state
+const isTranslating = ref(false)
+const translatedContent = ref('')
+const translatedTitle = ref('')
+const isTranslated = ref(false)
+const targetLanguageLabel = ref('')
 
 // Lightbox state
 const lightboxOpen = ref(false)
@@ -366,12 +395,49 @@ const focusCommentInput = () => {
   }
 }
 
-const formattedContent = computed(() => {
-  if (!post.value || !post.value.content) return ''
-  return post.value.content.replace(/(^|\s)(#[\w\u00C0-\u1EF9]+)/g, (match, p1, p2) => {
+const displayContent = computed(() => {
+  const contentToFormat = isTranslated.value ? translatedContent.value : (post.value?.content || '')
+  return contentToFormat.replace(/(^|\s)(#[\w\u00C0-\u1EF9]+)/g, (match, p1, p2) => {
     return `${p1}<a href="/?search=${encodeURIComponent(p2)}" class="hashtag-link text-primary text-decoration-none fw-bold" data-hashtag="${p2}">${p2}</a>`
   })
 })
+
+const handleTranslate = async () => {
+  if (isTranslated.value) return
+  
+  try {
+    isTranslating.value = true
+    const result = await translateHTMLContent({
+      title: post.value.title,
+      content: post.value.content
+    })
+    
+    if (result && typeof result === 'object') {
+      translatedTitle.value = result.title
+      translatedContent.value = result.content
+      targetLanguageLabel.value = result.targetLanguage || 'Tiếng Anh'
+      isTranslated.value = true
+      
+      notificationStore.addNotification({
+        type: 'success',
+        title: 'Đã dịch',
+        message: `Tiêu đề và nội dung đã được dịch sang ${targetLanguageLabel.value}.`
+      })
+    }
+  } catch (error) {
+    notificationStore.addNotification({
+      type: 'error',
+      title: 'Lỗi dịch thuật',
+      message: error.message
+    })
+  } finally {
+    isTranslating.value = false
+  }
+}
+
+const resetTranslation = () => {
+  isTranslated.value = false
+}
 
 const handleContentClick = (event) => {
   const target = event.target

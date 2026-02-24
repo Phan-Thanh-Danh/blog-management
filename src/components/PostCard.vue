@@ -43,12 +43,24 @@
 
       <!-- 2. Text Content -->
       <div class="post-text-content mb-3 px-1">
-        <h6 v-if="post.title" class="fw-bold mb-2">{{ post.title }}</h6>
+        <h6 v-if="post.title" class="fw-bold mb-2">{{ isTranslated ? translatedTitle : post.title }}</h6>
         <div v-if="post.summary" class="ai-summary mb-2 p-2 rounded-2 bg-light border-start border-primary border-4">
           <small class="text-muted d-block mb-1 small-badge"><i class="bi bi-stars text-primary me-1"></i>Tóm tắt bởi AI</small>
-          <p class="card-text mb-0 fs-7 fst-italic">{{ post.summary }}</p>
+          <p class="card-text mb-0 fs-7 fst-italic">{{ isTranslated ? translatedText : post.summary }}</p>
         </div>
-        <p v-else class="card-text mb-2 text-dark">{{ truncateContent(post.content, 250) }}</p>
+        <p v-else class="card-text mb-2 text-dark">{{ isTranslated ? translatedText : truncateContent(post.content, 250) }}</p>
+        
+        <!-- Translation Loading -->
+        <div v-if="isTranslating" class="d-flex align-items-center gap-2 mb-2">
+          <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+          <small class="text-primary fw-semibold">Đang dịch...</small>
+        </div>
+        <div v-else-if="isTranslated" class="mb-2">
+           <small class="text-info fw-bold" style="font-size: 11px;">
+             <i class="bi bi-translate me-1"></i>Đã dịch sang {{ targetLanguageLabel }} 
+             <span class="ms-1 cursor-pointer text-decoration-underline" @click.stop="resetTranslation">(Gốc)</span>
+           </small>
+        </div>
         
         <!-- Hashtags -->
         <div v-if="post.tags && post.tags.length > 0" class="mb-2 d-flex flex-wrap gap-1">
@@ -116,6 +128,15 @@
           <i class="bi bi-share"></i>
           <span class="ms-2 fw-semibold">Chia sẻ</span>
         </button>
+        <button 
+          @click.stop="handleTranslate" 
+          class="btn flex-grow-1 action-btn py-2"
+          :disabled="isTranslating"
+          :class="{ 'text-info': isTranslated }"
+        >
+          <i class="bi bi-translate"></i>
+          <span class="ms-2 fw-semibold">{{ isTranslated ? 'Đã dịch' : 'Dịch' }}</span>
+        </button>
       </div>
     </div>
   </div>
@@ -126,6 +147,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { translateHTMLContent } from '../utils/geminiService'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -140,6 +162,11 @@ const props = defineProps({
 const emit = defineEmits(['edit', 'delete'])
 
 const showDropdown = ref(false)
+const isTranslating = ref(false)
+const translatedText = ref('')
+const translatedTitle = ref('')
+const isTranslated = ref(false)
+const targetLanguageLabel = ref('')
 
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value
@@ -263,6 +290,35 @@ const handleDelete = () => {
   if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
     emit('delete', props.post.id)
   }
+}
+
+const handleTranslate = async () => {
+  if (isTranslated.value) return
+  
+  try {
+    isTranslating.value = true
+    const contentToTranslate = props.post.summary || truncateContent(props.post.content, 250)
+    const result = await translateHTMLContent({
+      title: props.post.title,
+      content: contentToTranslate
+    })
+    
+    if (result && typeof result === 'object') {
+      translatedTitle.value = result.title
+      translatedText.value = result.content
+      targetLanguageLabel.value = result.targetLanguage || 'Tiếng Anh'
+      isTranslated.value = true
+    }
+  } catch (error) {
+    console.error('Translation error:', error)
+    alert('Không thể dịch lúc này: ' + error.message)
+  } finally {
+    isTranslating.value = false
+  }
+}
+
+const resetTranslation = () => {
+  isTranslated.value = false
 }
 </script>
 
