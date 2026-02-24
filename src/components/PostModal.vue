@@ -54,6 +54,29 @@
               />
             </div>
 
+            <!-- AI Summary Section -->
+            <div v-if="form.content.replace(/<[^>]*>?/gm, '').length > 50" class="mb-3">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <label class="fw-bold small mb-0"><i class="bi bi-stars text-primary me-1"></i>Tóm tắt bởi AI</label>
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-outline-primary border-0 shadow-none py-0"
+                  @click="handleAISummary"
+                  :disabled="summarizing"
+                >
+                  <span v-if="summarizing" class="spinner-border spinner-border-sm me-1"></span>
+                  <i v-else class="bi bi-magic me-1"></i>
+                  {{ form.summary ? 'Tóm tắt lại' : 'Tạo tóm tắt' }}
+                </button>
+              </div>
+              <textarea 
+                v-model="form.summary" 
+                class="form-control bg-light border-0 shadow-none small" 
+                rows="2" 
+                placeholder="Tóm tắt ngắn gọn bài viết sẽ hiển thị ở trang chủ..."
+              ></textarea>
+            </div>
+
             <!-- Image Upload Section -->
             <div v-if="showImageUpload" class="border rounded p-3 mb-3 position-relative bg-light">
               <button type="button" class="btn-close position-absolute top-0 end-0 m-2" @click="closeImageUpload"></button>
@@ -110,6 +133,7 @@ import { ref, watch, onMounted } from 'vue'
 import { Modal } from 'bootstrap'
 import { useAuthStore } from '../stores/auth'
 import { compressImage } from '../utils/imageHelper'
+import { generateSummary } from '../utils/geminiService'
 import Editor from './Editor.vue'
 
 const props = defineProps({
@@ -126,6 +150,7 @@ const fileInput = ref(null)
 let modalInstance = null
 
 const loading = ref(false)
+const summarizing = ref(false)
 const showImageUpload = ref(false)
 
 const form = ref({
@@ -133,7 +158,8 @@ const form = ref({
   title: '',
   category: '',
   content: '',
-  images: []
+  images: [],
+  summary: ''
 })
 
 const resetForm = () => {
@@ -142,7 +168,8 @@ const resetForm = () => {
     title: '',
     category: '',
     content: '',
-    images: []
+    images: [],
+    summary: ''
   }
   showImageUpload.value = false
 }
@@ -154,7 +181,8 @@ const syncForm = () => {
       title: props.initialData.title || '',
       category: props.initialData.category || '',
       content: props.initialData.content || '',
-      images: props.initialData.images ? [...props.initialData.images] : (props.initialData.image ? [props.initialData.image] : [])
+      images: props.initialData.images ? [...props.initialData.images] : (props.initialData.image ? [props.initialData.image] : []),
+      summary: props.initialData.summary || ''
     }
     if (form.value.images.length > 0) showImageUpload.value = true
   } else {
@@ -209,6 +237,19 @@ const closeImageUpload = () => {
   form.value.images = []
 }
 
+const handleAISummary = async () => {
+  if (!form.value.content) return
+  summarizing.value = true
+  try {
+    const summary = await generateSummary(form.value.content)
+    form.value.summary = summary
+  } catch (err) {
+    alert('Không thể tạo tóm tắt: ' + err.message)
+  } finally {
+    summarizing.value = false
+  }
+}
+
 const handleSubmit = async () => {
   loading.value = true
   try {
@@ -218,7 +259,8 @@ const handleSubmit = async () => {
       content: form.value.content,
       // For simplicity, we store the first image in 'image' and all in 'images'
       image: form.value.images.length > 0 ? form.value.images[0] : '',
-      images: form.value.images
+      images: form.value.images,
+      summary: form.value.summary
     }
 
     if (props.mode === 'create') {

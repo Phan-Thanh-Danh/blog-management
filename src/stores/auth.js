@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useNotificationStore } from './notification'
 
 export const useAuthStore = defineStore('auth', () => {
+  const notificationStore = useNotificationStore()
   const user = ref(null)
   const users = ref([])
   const posts = ref([])
@@ -131,6 +133,13 @@ export const useAuthStore = defineStore('auth', () => {
 
     user.value = foundUser
     localStorage.setItem('currentUser', JSON.stringify(foundUser))
+
+    notificationStore.addNotification({
+      type: 'success',
+      title: 'Đăng nhập thành công',
+      message: `Chào mừng ${foundUser.name} đã quay trở lại!`
+    })
+
     return foundUser
   }
 
@@ -161,6 +170,7 @@ export const useAuthStore = defineStore('auth', () => {
       authorId: user.value.id,
       authorName: user.value.name,
       authorAvatar: user.value.avatar,
+      summary: postData.summary || '', // THÊM: Tóm tắt bài viết
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -202,6 +212,7 @@ export const useAuthStore = defineStore('auth', () => {
       image: finalImages.length > 0 ? finalImages[0] : '',
       category: postData.category || post.category || 'Chung',
       tags: extractHashtags(postData.content),
+      summary: postData.summary || post.summary || '', // Cập nhật tóm tắt
       updatedAt: new Date().toISOString()
     }
 
@@ -251,6 +262,14 @@ export const useAuthStore = defineStore('auth', () => {
 
     comments.value.push(newComment)
     localStorage.setItem('comments', JSON.stringify(comments.value))
+
+    // Thông báo cho post author (trong demo này chỉ hiện toast cho chính mình)
+    notificationStore.addNotification({
+      type: 'success',
+      title: 'Bình luận thành công',
+      message: 'Bình luận của bạn đã được đăng.'
+    })
+
     return newComment
   }
 

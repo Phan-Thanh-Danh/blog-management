@@ -108,6 +108,23 @@
                 />
               </div>
             </div>
+
+            <!-- Skeleton Loading -->
+            <div v-if="loadingContent" class="skeleton-list">
+              <div v-for="i in 3" :key="i" class="card mb-3 shadow-none border-0 p-3 bg-white rounded-3">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="skeleton-circle me-2"></div>
+                  <div class="flex-grow-1">
+                    <div class="skeleton-line w-25 mb-2"></div>
+                    <div class="skeleton-line w-15"></div>
+                  </div>
+                </div>
+                <div class="skeleton-line w-75 mb-2"></div>
+                <div class="skeleton-line w-100 mb-2"></div>
+                <div class="skeleton-line w-50"></div>
+                <div class="skeleton-rect mt-3"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -178,6 +195,7 @@ const feedType = ref('all') // 'all' | 'following'
 const postModalRef = ref(null)
 const modalMode = ref('create')
 const selectedPost = ref({})
+const loadingContent = ref(false)
 
 const openCreateModal = () => {
   modalMode.value = 'create'
@@ -202,6 +220,14 @@ watch(() => route.path, (newPath) => {
     feedType.value = 'all'
     searchFilter.value = ''
   }
+})
+
+// Giả lập hiệu ứng loading khi đổi filter
+watch([feedType, searchFilter, sortBy], () => {
+  loadingContent.value = true
+  setTimeout(() => {
+    loadingContent.value = false
+  }, 600)
 })
 
 // Watch for global create action from Navbar
@@ -379,4 +405,20 @@ const deletePost = (postId) => {
     padding-top: 1rem !important;
   }
 }
+
+/* Skeleton Keyframes */
+@keyframes skeleton-loading {
+  0% { background-color: #f0f2f5; }
+  50% { background-color: #e4e6e9; }
+  100% { background-color: #f0f2f5; }
+}
+
+.skeleton-line, .skeleton-circle, .skeleton-rect {
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+  border-radius: 4px;
+}
+
+.skeleton-line { height: 12px; }
+.skeleton-circle { width: 40px; height: 40px; border-radius: 50%; }
+.skeleton-rect { width: 100%; height: 200px; border-radius: 8px; }
 </style>

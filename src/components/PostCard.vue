@@ -44,7 +44,11 @@
       <!-- 2. Text Content -->
       <div class="post-text-content mb-3 px-1">
         <h6 v-if="post.title" class="fw-bold mb-2">{{ post.title }}</h6>
-        <p class="card-text mb-2 text-dark">{{ truncateContent(post.content, 250) }}</p>
+        <div v-if="post.summary" class="ai-summary mb-2 p-2 rounded-2 bg-light border-start border-primary border-4">
+          <small class="text-muted d-block mb-1 small-badge"><i class="bi bi-stars text-primary me-1"></i>Tóm tắt bởi AI</small>
+          <p class="card-text mb-0 fs-7 fst-italic">{{ post.summary }}</p>
+        </div>
+        <p v-else class="card-text mb-2 text-dark">{{ truncateContent(post.content, 250) }}</p>
         
         <!-- Hashtags -->
         <div v-if="post.tags && post.tags.length > 0" class="mb-2 d-flex flex-wrap gap-1">
@@ -265,6 +269,13 @@ const handleDelete = () => {
 <style scoped>
 .post-card {
   border-radius: 8px;
+}
+
+.fs-7 { font-size: 0.875rem; }
+.small-badge { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.ai-summary {
+  background-color: #f8f9fa !important;
 }
 
 .action-btn {
