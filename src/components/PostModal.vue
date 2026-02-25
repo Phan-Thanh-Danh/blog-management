@@ -39,8 +39,8 @@
 
             <!-- Category -->
             <div class="mb-3">
-              <select v-model="form.category" class="form-select border-0 bg-light shadow-none fw-semibold" required>
-                <option value="" disabled>Chọn danh mục...</option>
+              <select v-model="form.category" class="form-select border-0 bg-light shadow-none fw-semibold">
+                <option value="">Không có danh mục (Chung)</option>
                 <option v-for="cat in authStore.categories" :key="cat" :value="cat">{{ cat }}</option>
               </select>
             </div>

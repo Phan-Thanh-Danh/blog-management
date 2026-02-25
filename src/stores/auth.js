@@ -216,7 +216,7 @@ export const useAuthStore = defineStore('auth', () => {
       content: postData.content,
       images: finalImages,
       image: finalImages.length > 0 ? finalImages[0] : '',
-      category: postData.category || post.category || 'Chung',
+      category: postData.category || 'Chung',
       tags: extractHashtags(postData.content),
       summary: postData.summary || post.summary || '', // Cập nhật tóm tắt
       updatedAt: new Date().toISOString()
