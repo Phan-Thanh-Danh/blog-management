@@ -180,12 +180,16 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useDialogStore } from '../stores/dialog'
+import { useNotificationStore } from '../stores/notification'
 import PostCard from '../components/PostCard.vue'
 import PostModal from '../components/PostModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const dialogStore = useDialogStore()
+const notificationStore = useNotificationStore()
 
 const sortBy = ref('newest')
 const searchFilter = ref('')
@@ -318,13 +322,14 @@ const editPost = (post) => {
   postModalRef.value?.show()
 }
 
-const deletePost = (postId) => {
-  if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+const deletePost = async (postId) => {
+  const confirmed = await dialogStore.confirm('Bạn có chắc chắn muốn xóa bài viết này?', 'Xóa bài viết')
+  if (confirmed) {
     try {
       authStore.deletePost(postId)
-      alert('Xóa bài viết thành công!')
+      notificationStore.addNotification({ type: 'success', title: 'Xóa thành công', message: 'Bài viết đã được xóa.' })
     } catch (error) {
-      alert(error.message)
+      dialogStore.alert(error.message, 'error')
     }
   }
 }

@@ -313,12 +313,16 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useDialogStore } from '../stores/dialog'
+import { useNotificationStore } from '../stores/notification'
 import { compressImage } from '../utils/imageHelper'
 import PostCard from '../components/PostCard.vue'
 import PostModal from '../components/PostModal.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const dialogStore = useDialogStore()
+const notificationStore = useNotificationStore()
 
 // Profile State
 const targetUser = ref(null)
@@ -365,7 +369,7 @@ const handleToggleFollow = async () => {
   try {
     await authStore.toggleFollow(targetUser.value.id)
   } catch (err) {
-    alert(err.message)
+    dialogStore.alert(err.message, 'error')
   }
 }
 
@@ -523,12 +527,14 @@ const handleUpdate = () => {
   }
 }
 
-const handleDeletePost = (postId) => {
-  if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+const handleDeletePost = async (postId) => {
+  const confirmed = await dialogStore.confirm('Bạn có chắc chắn muốn xóa bài viết này?', 'Xóa bài viết')
+  if (confirmed) {
     try {
       authStore.deletePost(postId)
+      notificationStore.addNotification({ type: 'success', title: 'Xóa thành công', message: 'Bài viết đã được xóa.' })
     } catch (err) {
-      alert(err.message)
+      dialogStore.alert(err.message, 'error')
     }
   }
 }

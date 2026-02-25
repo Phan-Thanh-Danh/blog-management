@@ -132,6 +132,8 @@
 import { ref, watch, onMounted } from 'vue'
 import { Modal } from 'bootstrap'
 import { useAuthStore } from '../stores/auth'
+import { useDialogStore } from '../stores/dialog'
+import { useNotificationStore } from '../stores/notification'
 import { compressImage } from '../utils/imageHelper'
 import { generateSummary } from '../utils/geminiService'
 import Editor from './Editor.vue'
@@ -145,6 +147,8 @@ const props = defineProps({
 const emit = defineEmits(['saved', 'closed'])
 
 const authStore = useAuthStore()
+const dialogStore = useDialogStore()
+const notificationStore = useNotificationStore()
 const modalRef = ref(null)
 const fileInput = ref(null)
 let modalInstance = null
@@ -244,7 +248,7 @@ const handleAISummary = async () => {
     const summary = await generateSummary(form.value.content)
     form.value.summary = summary
   } catch (err) {
-    alert('Không thể tạo tóm tắt: ' + err.message)
+    dialogStore.alert('Không thể tạo tóm tắt: ' + err.message, 'error', 'Lỗi AI')
   } finally {
     summarizing.value = false
   }
@@ -265,17 +269,17 @@ const handleSubmit = async () => {
 
     if (props.mode === 'create') {
       await authStore.createPost(postData)
-      alert('Đăng bài thành công!')
+      notificationStore.addNotification({ type: 'success', title: 'Đăng bài thành công', message: 'Bài viết của bạn đã được đăng.' })
     } else {
       await authStore.updatePost(form.value.id, postData)
-      alert('Cập nhật bài viết thành công!')
+      notificationStore.addNotification({ type: 'success', title: 'Cập nhật thành công', message: 'Bài viết đã được cập nhật.' })
     }
     
     emit('saved')
     hide()
     resetForm()
   } catch (err) {
-    alert('Lỗi: ' + err.message)
+    dialogStore.alert('Lỗi: ' + err.message, 'error')
   } finally {
     loading.value = false
   }

@@ -80,8 +80,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { useDialogStore } from '../stores/dialog'
 
 const authStore = useAuthStore()
+const dialogStore = useDialogStore()
 
 const props = defineProps({
   comment: {
@@ -138,7 +140,7 @@ const toggleLike = () => {
   try {
     authStore.toggleCommentLike(props.comment.id)
   } catch (error) {
-    alert(error.message)
+    dialogStore.alert(error.message, 'error')
   }
 }
 
@@ -169,7 +171,7 @@ const handleReply = () => {
     replyContent.value = ''
     showReplyForm.value = false
   } catch (error) {
-    alert(error.message)
+    dialogStore.alert(error.message, 'error')
   }
 }
 </script>

@@ -138,9 +138,11 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useDialogStore } from '../stores/dialog'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const dialogStore = useDialogStore()
 
 const form = ref({
   name: '',
@@ -194,7 +196,7 @@ const handleRegister = () => {
       password: form.value.password
     })
     
-    alert('Đăng ký thành công! Vui lòng đăng nhập.')
+    await dialogStore.alert('Đăng ký thành công! Vui lòng đăng nhập.', 'success', 'Thành công')
     router.push('/login')
   } catch (err) {
     error.value = err.message

@@ -89,7 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem(key, JSON.stringify(data))
     } catch (e) {
       if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-        alert('LỖI: Bộ nhớ trình duyệt đã đầy! Bạn cần xóa bớt bài viết cũ hoặc ảnh để tiếp tục.')
+        throw new Error('Bộ nhớ trình duyệt đã đầy! Bạn cần xóa bớt bài viết cũ hoặc ảnh để tiếp tục.')
       }
       throw e
     }

@@ -9,6 +9,9 @@
       </Transition>
     </router-view>
 
+    <!-- Global Dialog (thay alert/confirm) -->
+    <AppDialog />
+
     <!-- Custom Toast System -->
     <Teleport to="body">
       <div class="toast-viewport">
@@ -53,6 +56,7 @@
 
 <script setup>
 import Navbar from './components/Navbar.vue'
+import AppDialog from './components/AppDialog.vue'
 import { useNotificationStore } from './stores/notification'
 
 const notificationStore = useNotificationStore()

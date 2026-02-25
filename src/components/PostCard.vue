@@ -147,10 +147,12 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useDialogStore } from '../stores/dialog'
 import { translateHTMLContent } from '../utils/geminiService'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const dialogStore = useDialogStore()
 
 const props = defineProps({
   post: {
@@ -278,19 +280,20 @@ const formatDate = (dateString) => {
 
 const handleLike = () => {
   if (!authStore.isAuthenticated) {
-    alert('Bạn cần đăng nhập để thích bài viết')
+    dialogStore.alert('Bạn cần đăng nhập để thích bài viết', 'info', 'Yêu cầu đăng nhập')
     return
   }
 
   try {
     authStore.toggleLike(props.post.id)
   } catch (error) {
-    alert(error.message)
+    dialogStore.alert(error.message, 'error')
   }
 }
 
-const handleDelete = () => {
-  if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+const handleDelete = async () => {
+  const confirmed = await dialogStore.confirm('Bạn có chắc chắn muốn xóa bài viết này?', 'Xóa bài viết')
+  if (confirmed) {
     emit('delete', props.post.id)
   }
 }
@@ -314,7 +317,7 @@ const handleTranslate = async () => {
     }
   } catch (error) {
     console.error('Translation error:', error)
-    alert('Không thể dịch lúc này: ' + error.message)
+    dialogStore.alert('Không thể dịch lúc này: ' + error.message, 'error', 'Lỗi dịch thuật')
   } finally {
     isTranslating.value = false
   }

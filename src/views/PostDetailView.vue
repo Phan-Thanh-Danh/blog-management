@@ -244,12 +244,14 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useDialogStore } from '../stores/dialog'
 import CommentItem from '../components/CommentItem.vue'
 import PostModal from '../components/PostModal.vue'
 import { translateHTMLContent } from '../utils/geminiService'
 import { useNotificationStore } from '../stores/notification'
 
 const notificationStore = useNotificationStore()
+const dialogStore = useDialogStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -357,19 +359,19 @@ const handleAddComment = () => {
     authStore.createComment(postId, commentContent.value)
     commentContent.value = ''
   } catch (error) {
-    alert(error.message)
+    dialogStore.alert(error.message, 'error')
   }
 }
 
 const handleLike = () => {
   if (!authStore.isAuthenticated) {
-    alert('Bạn cần đăng nhập để thích bài viết')
+    dialogStore.alert('Bạn cần đăng nhập để thích bài viết', 'info', 'Yêu cầu đăng nhập')
     return
   }
   try {
     authStore.toggleLike(parseInt(route.params.id))
   } catch (error) {
-    alert(error.message)
+    dialogStore.alert(error.message, 'error')
   }
 }
 
@@ -377,14 +379,14 @@ const handleToggleFollow = () => {
   try {
     authStore.toggleFollow(post.value.authorId)
   } catch (error) {
-    alert(error.message)
+    dialogStore.alert(error.message, 'error')
   }
 }
 
 const sharePost = () => {
   const url = window.location.href
   navigator.clipboard.writeText(url).then(() => {
-    alert('Đã sao chép liên kết!')
+    notificationStore.addNotification({ type: 'success', title: 'Sao chép liên kết', message: 'Đã sao chép vào bộ nhớ!' })
   })
 }
 
@@ -392,7 +394,7 @@ const focusCommentInput = () => {
   if (authStore.isAuthenticated) {
     commentInput.value?.focus()
   } else {
-    alert('Vui lòng đăng nhập để bình luận')
+    dialogStore.alert('Vui lòng đăng nhập để bình luận', 'info', 'Yêu cầu đăng nhập')
   }
 }
 
@@ -453,14 +455,15 @@ const editPost = () => {
   postModalRef.value?.show()
 }
 
-const deletePost = () => {
-  if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+const deletePost = async () => {
+  const confirmed = await dialogStore.confirm('Bạn có chắc chắn muốn xóa bài viết này?', 'Xóa bài viết')
+  if (confirmed) {
     try {
       authStore.deletePost(post.value.id)
-      alert('Xóa bài viết thành công!')
+      notificationStore.addNotification({ type: 'success', title: 'Xóa thành công', message: 'Bài viết đã được xóa.' })
       router.push('/')
     } catch (error) {
-      alert(error.message)
+      dialogStore.alert(error.message, 'error')
     }
   }
 }
