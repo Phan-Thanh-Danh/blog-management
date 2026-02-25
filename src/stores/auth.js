@@ -11,6 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   const likes = ref([])
   const commentLikes = ref([])
   const savedPosts = ref([]) // bookmark: array of postId
+  const reactions = ref([]) // [{id, postId, userId, type, createdAt}]
   const categories = ref([
     'Công nghệ',
     'Review',
@@ -62,6 +63,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
     const rawSaved = localStorage.getItem('savedPosts')
     if (rawSaved) savedPosts.value = JSON.parse(rawSaved)
+    const rawReactions = localStorage.getItem('postReactions')
+    if (rawReactions) reactions.value = JSON.parse(rawReactions)
 
     // Lọc bỏ các bài viết không hợp lệ
     if (savedPostsRaw) {
@@ -312,17 +315,86 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('likes', JSON.stringify(likes.value))
   }
 
-  // KIỂM TRA ĐÃ LIKE BÀI VIẾT CHƯA
+  // KIỂM TRA ĐÃ LIKE BÀI VIẾT CHƯA (like thường hoặc bất kỳ reaction nào)
   const isPostLiked = (postId) => {
     if (!user.value) return false
-    return likes.value.some(
-      l => l.postId === postId && l.userId === user.value.id
-    )
+    return likes.value.some(l => l.postId === postId && l.userId === user.value.id) ||
+      reactions.value.some(r => r.postId === postId && r.userId === user.value.id)
   }
 
-  // ĐÊM SỐ LIKE CỦA BÀI VIẾT
+  // ĐẬM SỐ LIKE + REACTION CỦA BÀI VIẮT
   const getPostLikesCount = (postId) => {
-    return likes.value.filter(l => l.postId === postId).length
+    const likeCount = likes.value.filter(l => l.postId === postId).length
+    const reactionCount = reactions.value.filter(r => r.postId === postId).length
+    return likeCount + reactionCount
+  }
+
+  // REACTION: ĐặT / ĐỔI / XÓA CẢM XÚC
+  const REACTION_TYPES = ['like', 'love', 'haha', 'wow', 'sad', 'angry']
+
+  const toggleReaction = (postId, reactionType) => {
+    if (!user.value) throw new Error('Bạn cần đăng nhập')
+    if (!REACTION_TYPES.includes(reactionType)) return
+
+    // Xóa like cũ nếu có
+    likes.value = likes.value.filter(
+      l => !(l.postId === postId && l.userId === user.value.id)
+    )
+    localStorage.setItem('likes', JSON.stringify(likes.value))
+
+    const existing = reactions.value.find(
+      r => r.postId === postId && r.userId === user.value.id
+    )
+
+    if (existing) {
+      if (existing.type === reactionType) {
+        // Xóa reaction (bỏ cảm xúc)
+        reactions.value = reactions.value.filter(
+          r => !(r.postId === postId && r.userId === user.value.id)
+        )
+      } else {
+        // Thạy đổi loại reaction
+        existing.type = reactionType
+      }
+    } else {
+      // Thêm reaction mới
+      reactions.value.push({
+        id: Date.now(),
+        postId,
+        userId: user.value.id,
+        type: reactionType,
+        createdAt: new Date().toISOString()
+      })
+    }
+
+    localStorage.setItem('postReactions', JSON.stringify(reactions.value))
+  }
+
+  // LẤY REACTION HIỆN TẠI CỦA USER VỚI 1 BÀI
+  const getUserReaction = (postId) => {
+    if (!user.value) return null
+    // Kiểm tra reactions mới trước
+    const r = reactions.value.find(r => r.postId === postId && r.userId === user.value.id)
+    if (r) return r.type
+    // Nếu có like cũ thì coi là 'like'
+    const l = likes.value.find(l => l.postId === postId && l.userId === user.value.id)
+    return l ? 'like' : null
+  }
+
+  // TỔNG HỢP REACTIONS CỦA 1 BÀI (top 3 loại + tổng)
+  const getPostReactionsSummary = (postId) => {
+    const all = reactions.value.filter(r => r.postId === postId)
+    // Thêm likes cũ vào như 'like'
+    const oldLikes = likes.value.filter(l => l.postId === postId)
+    const counts = {}
+    oldLikes.forEach(() => { counts['like'] = (counts['like'] || 0) + 1 })
+    all.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1 })
+    const total = Object.values(counts).reduce((a, b) => a + b, 0)
+    const top = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([type]) => type)
+    return { counts, total, top }
   }
 
   // TOGGLE LIKE BÌNH LUẬN
@@ -473,6 +545,11 @@ export const useAuthStore = defineStore('auth', () => {
     savedPosts,
     toggleBookmark,
     isBookmarked,
-    bookmarkedPostsList
+    bookmarkedPostsList,
+    // Reactions
+    reactions,
+    toggleReaction,
+    getUserReaction,
+    getPostReactionsSummary
   }
 })

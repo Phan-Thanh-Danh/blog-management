@@ -100,11 +100,20 @@
     <div class="card-body p-3 pt-2">
       <!-- 4. Engagement Bar (Stats) -->
       <div class="d-flex justify-content-between align-items-center px-1 mb-2">
-         <div class="stats-icons d-flex align-items-center">
-            <div class="icon-circle bg-primary text-white me-1">
+         <div class="stats-icons d-flex align-items-center gap-1">
+            <!-- Reaction icons (top 3 loại) -->
+            <div v-if="reactionSummary.total > 0" class="d-flex align-items-center">
+              <span
+                v-for="rType in reactionSummary.top"
+                :key="rType"
+                class="reaction-stat-emoji"
+                style="font-size: 14px; line-height: 1;"
+              >{{ reactionEmoji(rType) }}</span>
+            </div>
+            <div v-else class="icon-circle bg-primary text-white me-1">
                <i class="bi bi-hand-thumbs-up-fill" style="font-size: 10px;"></i>
             </div>
-            <span class="text-muted small">{{ likesCount }}</span>
+            <span class="text-muted small ms-1">{{ reactionSummary.total || 0 }}</span>
          </div>
          <div class="text-muted small">
             {{ commentsCount }} bình luận
@@ -113,16 +122,15 @@
 
       <hr class="my-2 mx-1 opacity-10">
 
+
       <!-- 5. Action Buttons -->
-      <div class="d-flex justify-content-between px-1">
-        <button 
-          @click.stop="handleLike" 
-          class="btn flex-grow-1 action-btn py-2"
-          :class="{ 'text-primary active-btn': isLiked }"
-        >
-          <i class="bi" :class="isLiked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'"></i>
-          <span class="ms-2 fw-semibold">Thích</span>
-        </button>
+      <div class="d-flex justify-content-between px-1" style="overflow: visible;">
+        <!-- Reaction Picker (thay thế like button) -->
+        <ReactionPicker
+          :post-id="post.id"
+          :current-reaction="myReaction"
+          @react="handleReact"
+        />
         <router-link :to="`/post/${post.id}`" class="btn flex-grow-1 action-btn py-2 text-decoration-none" @click.stop>
           <i class="bi bi-chat-left"></i>
           <span class="ms-2 fw-semibold">Bình luận</span>
@@ -163,6 +171,7 @@ import { useDialogStore } from '../stores/dialog'
 import { useActivityStore } from '../stores/activity'
 import { translateHTMLContent } from '../utils/geminiService'
 import ImageLightbox from './ImageLightbox.vue'
+import ReactionPicker from './ReactionPicker.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -251,6 +260,11 @@ const likesCount = computed(() => {
 
 const isLiked = computed(() => authStore.isPostLiked(props.post.id))
 const isBookmarked = computed(() => authStore.isBookmarked(props.post.id))
+const myReaction = computed(() => authStore.getUserReaction(props.post.id))
+const reactionSummary = computed(() => authStore.getPostReactionsSummary(props.post.id))
+
+const REACTION_EMOJIS = { like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡' }
+const reactionEmoji = (type) => REACTION_EMOJIS[type] || '👍'
 
 // Computed: Đếm số comments (bao gồm cả replies)
 const commentsCount = computed(() => {
@@ -296,16 +310,16 @@ const formatDate = (dateString) => {
   })
 }
 
-const handleLike = () => {
+const handleReact = (reactionType) => {
   if (!authStore.isAuthenticated) {
-    dialogStore.alert('Bạn cần đăng nhập để thích bài viết', 'info', 'Yêu cầu đăng nhập')
+    dialogStore.alert('Bạn cần đăng nhập để thả cảm xúc', 'info', 'Yêu cầu đăng nhập')
     return
   }
   try {
-    const wasLiked = authStore.isPostLiked(props.post.id)
-    authStore.toggleLike(props.post.id)
-    // Tracking activity khi like (không tự like bài của mình)
-    if (!wasLiked && authStore.user.id !== props.post.authorId) {
+    const hadReaction = authStore.getUserReaction(props.post.id)
+    authStore.toggleReaction(props.post.id, reactionType || 'like')
+    // Tracking activity khi thả cảm xúc lần đầu (không tự like bài của mình)
+    if (!hadReaction && reactionType && authStore.user.id !== props.post.authorId) {
       activityStore.addActivity({
         type: 'like',
         targetUserId: props.post.authorId,
@@ -320,6 +334,9 @@ const handleLike = () => {
     dialogStore.alert(error.message, 'error')
   }
 }
+
+// Giữ lại handleLike để các component khác không bị lỗi
+const handleLike = () => handleReact('like')
 
 const handleBookmark = () => {
   if (!authStore.isAuthenticated) {
