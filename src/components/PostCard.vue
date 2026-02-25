@@ -246,14 +246,17 @@ const readingTime = computed(() => {
 
 const truncateContent = (text, length) => {
   if (!text) return ''
-  // Strip HTML tags using a temporary element or regex
-  // Using regex for simplicity and performance in this context, 
-  // though temporary element is safer for complex HTML structure decoding.
-  // Given we just need a plain text preview:
+  
+  // 1. Tách bỏ các thẻ HTML để lấy text thuần
   const strippedText = text.replace(/<[^>]*>?/gm, '')
   
-  if (strippedText.length <= length) return strippedText
-  return strippedText.substring(0, length) + '...'
+  // 2. Giải mã các thực thể HTML (ví dụ: &ocirc; thành ô)
+  const textArea = document.createElement('textarea')
+  textArea.innerHTML = strippedText
+  const decodedText = textArea.value
+  
+  if (decodedText.length <= length) return decodedText
+  return decodedText.substring(0, length) + '...'
 }
 
 const formatDate = (dateString) => {
