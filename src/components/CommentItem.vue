@@ -68,6 +68,7 @@
             v-for="reply in replies" 
             :key="reply.id" 
             :comment="reply"
+            :post-id="props.postId"
             :is-reply="true"
           />
         </div>
@@ -87,6 +88,10 @@ const props = defineProps({
     type: Object,
     required: true
   },
+  postId: {
+    type: Number,
+    default: null  // optional — dùng comment.postId làm fallback
+  },
   isReply: {
     type: Boolean,
     default: false
@@ -96,10 +101,10 @@ const props = defineProps({
 const showReplyForm = ref(false)
 const replyContent = ref('')
 
-// Lấy danh sách replies
+// Lấy danh sách replies — truy cập trực tiếp authStore.comments để đảm bảo reactivity
 const replies = computed(() => {
   if (props.isReply) return [] // Reply không có sub-replies
-  return authStore.getCommentReplies(props.comment.id)
+  return authStore.comments.filter(c => c.parentId === props.comment.id)
 })
 
 const repliesCount = computed(() => replies.value.length)
@@ -147,11 +152,19 @@ const handleReply = () => {
     return
   }
 
+  // Lấy postId từ prop nếu có, fallback về comment.postId
+  const targetPostId = props.postId ?? props.comment.postId
+
+  if (!targetPostId) {
+    console.error('CommentItem: không xác định được postId để tạo reply')
+    return
+  }
+
   try {
     authStore.createComment(
-      props.comment.postId, 
+      targetPostId,
       replyContent.value,
-      props.comment.id // parentId
+      props.comment.id  // parentId
     )
     replyContent.value = ''
     showReplyForm.value = false

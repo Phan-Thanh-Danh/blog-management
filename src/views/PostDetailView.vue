@@ -138,6 +138,7 @@
                 v-for="comment in postComments" 
                 :key="comment.id" 
                 :comment="comment"
+                :post-id="parseInt(route.params.id)"
               />
             </div>
             <div v-else class="text-center py-4 opacity-50">
