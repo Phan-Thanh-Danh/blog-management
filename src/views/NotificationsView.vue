@@ -51,6 +51,11 @@
           :class="{ active: filter === 'follow' }"
           @click="filter = 'follow'"
         ><i class="bi bi-person me-1"></i>Theo dõi</button>
+        <button
+          class="notif-tab-btn"
+          :class="{ active: filter === 'mention' }"
+          @click="filter = 'mention'"
+        ><i class="bi bi-at me-1"></i>Nhắc tên</button>
       </div>
 
       <!-- Empty State -->
@@ -145,6 +150,7 @@ const filteredActivities = computed(() => {
   if (filter.value === 'like') return myActivities.value.filter(a => a.type === 'like')
   if (filter.value === 'comment') return myActivities.value.filter(a => a.type === 'comment' || a.type === 'reply')
   if (filter.value === 'follow') return myActivities.value.filter(a => a.type === 'follow')
+  if (filter.value === 'mention') return myActivities.value.filter(a => a.type === 'mention')
   return myActivities.value
 })
 
@@ -171,7 +177,8 @@ const typeIcon = (type) => {
     comment: 'bi bi-chat-fill',
     reply: 'bi bi-reply-fill',
     follow: 'bi bi-person-fill',
-    bookmark: 'bi bi-bookmark-fill'
+    bookmark: 'bi bi-bookmark-fill',
+    mention: 'bi bi-at'
   }
   return icons[type] || 'bi bi-bell-fill'
 }
@@ -182,7 +189,8 @@ const typeLabel = (activity) => {
     comment: 'đã bình luận về bài viết',
     reply: 'đã phản hồi bình luận của bạn',
     follow: 'đã bắt đầu theo dõi bạn',
-    bookmark: 'đã lưu bài viết của bạn'
+    bookmark: 'đã lưu bài viết của bạn',
+    mention: 'đã nhắc tên bạn trong một bài viết'
   }
   return labels[activity.type] || 'đã tương tác'
 }
@@ -306,6 +314,7 @@ const formatTime = (dateString) => {
 .notif-type-icon.reply   { background: #8b5cf6; color: #fff; }
 .notif-type-icon.follow  { background: #10b981; color: #fff; }
 .notif-type-icon.bookmark{ background: #f59e0b; color: #fff; }
+.notif-type-icon.mention { background: #0866ff; color: #fff; }
 
 .notif-content {
   min-width: 0;

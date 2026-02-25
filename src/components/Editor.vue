@@ -37,12 +37,12 @@ onMounted(() => {
     plugins: [
       'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
       'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount', 'emoticons'
     ],
     toolbar: 'undo redo | blocks | ' +
       'bold italic backcolor | alignleft aligncenter ' +
       'alignright alignjustify | bullist numlist outdent indent | ' +
-      'removeformat | help',
+      'emoticons | removeformat | help',
     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
     initial_value: props.modelValue,
     setup: (editor) => {
@@ -69,6 +69,34 @@ onMounted(() => {
         onAction: (autocompleteApi, rng, value) => {
           editor.selection.setRng(rng)
           editor.insertContent(value)
+          autocompleteApi.hide()
+        }
+      });
+
+      // Autocompleter cho Mentions (@)
+      editor.ui.registry.addAutocompleter('mentions', {
+        trigger: '@',
+        minChars: 0,
+        columns: 1,
+        fetch: (pattern) => {
+          const allUsers = authStore.users
+          const filteredUsers = allUsers
+            .filter(u => u.name.toLowerCase().includes(pattern.toLowerCase()))
+            .map(u => ({
+              value: u.id.toString(),
+              text: u.name,
+              meta: { name: u.name }
+            }))
+          
+          return new Promise((resolve) => {
+            resolve(filteredUsers)
+          })
+        },
+        onAction: (autocompleteApi, rng, value, meta) => {
+          editor.selection.setRng(rng)
+          // Chèn link mention với class CSS đặc biệt
+          const mentionHtml = `<a href="/profile/${value}" class="mention" data-user-id="${value}">@${meta.name}</a>&nbsp;`
+          editor.insertContent(mentionHtml)
           autocompleteApi.hide()
         }
       });

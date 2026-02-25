@@ -134,6 +134,7 @@ import { Modal } from 'bootstrap'
 import { useAuthStore } from '../stores/auth'
 import { useDialogStore } from '../stores/dialog'
 import { useNotificationStore } from '../stores/notification'
+import { useActivityStore } from '../stores/activity'
 import { compressImage } from '../utils/imageHelper'
 import { generateSummary } from '../utils/geminiService'
 import Editor from './Editor.vue'
@@ -149,6 +150,7 @@ const emit = defineEmits(['saved', 'closed'])
 const authStore = useAuthStore()
 const dialogStore = useDialogStore()
 const notificationStore = useNotificationStore()
+const activityStore = useActivityStore()
 const modalRef = ref(null)
 const fileInput = ref(null)
 let modalInstance = null
@@ -268,11 +270,17 @@ const handleSubmit = async () => {
     }
 
     if (props.mode === 'create') {
-      await authStore.createPost(postData)
+      const newPost = await authStore.createPost(postData)
       notificationStore.addNotification({ type: 'success', title: 'Đăng bài thành công', message: 'Bài viết của bạn đã được đăng.' })
+      
+      // Gửi thông báo cho những người được tag
+      handleMentionNotifications(form.value.content, newPost.id, newPost.title)
     } else {
       await authStore.updatePost(form.value.id, postData)
       notificationStore.addNotification({ type: 'success', title: 'Cập nhật thành công', message: 'Bài viết đã được cập nhật.' })
+      
+      // Gửi thông báo cho những người được tag (có thể lọc trùng nếu cần, ở đây gửi đơn giản trước)
+      handleMentionNotifications(form.value.content, form.value.id, postData.title)
     }
     
     emit('saved')
@@ -283,6 +291,36 @@ const handleSubmit = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// Logic gửi thông báo khi được tag
+const handleMentionNotifications = (content, postId, postTitle) => {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(content, 'text/html')
+  const mentions = doc.querySelectorAll('.mention')
+  
+  // Dùng Set để tránh gửi thông báo trùng cho cùng 1 người trong 1 bài
+  const mentionedUserIds = new Set()
+  
+  mentions.forEach(el => {
+    const userId = el.getAttribute('data-user-id')
+    if (userId) mentionedUserIds.add(parseInt(userId))
+  })
+  
+  mentionedUserIds.forEach(targetUserId => {
+    // Không gửi thông báo cho chính mình nếu tự tag mình
+    if (targetUserId !== authStore.user.id) {
+      activityStore.addActivity({
+        type: 'mention',
+        targetUserId: targetUserId,
+        actorId: authStore.user.id,
+        actorName: authStore.user.name,
+        actorAvatar: authStore.user.avatar,
+        postId: postId,
+        postTitle: postTitle
+      })
+    }
+  })
 }
 </script>
 

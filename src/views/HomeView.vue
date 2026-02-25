@@ -100,13 +100,23 @@
 
             <!-- Posts List -->
             <div v-else class="posts-list">
-              <div v-for="post in sortedPosts" :key="post.id">
+              <div v-for="post in visiblePosts" :key="post.id">
                 <PostCard 
                   :post="post"
                   @edit="editPost"
                   @delete="deletePost"
                 />
               </div>
+            </div>
+
+            <!-- Sentinel element for Infinite Scroll -->
+            <div v-if="hasMorePosts && !loadingContent" ref="scrollSentinel" class="py-4 text-center">
+              <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Đang tải thêm...</span>
+              </div>
+            </div>
+            <div v-if="!hasMorePosts && sortedPosts.length > 0" class="py-4 text-center text-muted small">
+              Bạn đã xem hết bài viết.
             </div>
 
             <!-- Skeleton Loading -->
@@ -177,7 +187,7 @@
 
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useDialogStore } from '../stores/dialog'
@@ -194,6 +204,11 @@ const notificationStore = useNotificationStore()
 const sortBy = ref('newest')
 const searchFilter = ref('')
 const feedType = ref('all') // 'all' | 'following'
+
+// Infinite Scroll state
+const displayLimit = ref(5)
+const scrollSentinel = ref(null)
+let observer = null
 
 // Modal state
 const postModalRef = ref(null)
@@ -226,8 +241,9 @@ watch(() => route.path, (newPath) => {
   }
 })
 
-// Giả lập hiệu ứng loading khi đổi filter
+// Giả lập hiệu ứng loading khi đổi filter và RESET displayLimit
 watch([feedType, searchFilter, sortBy], () => {
+  displayLimit.value = 5 // Reset scroll khi đổi filter
   loadingContent.value = true
   setTimeout(() => {
     loadingContent.value = false
@@ -248,6 +264,7 @@ watch(() => route.query.action, (action) => {
 const resetHome = () => {
   feedType.value = 'all'
   searchFilter.value = ''
+  displayLimit.value = 5
   if (Object.keys(route.query).length > 0) {
     router.push('/')
   }
@@ -298,6 +315,40 @@ const sortedPosts = computed(() => {
   }
   
   return posts
+})
+
+// Computed: Bài viết hiển thị thực tế (Infinite Scroll)
+const visiblePosts = computed(() => {
+  return sortedPosts.value.slice(0, displayLimit.value)
+})
+
+const hasMorePosts = computed(() => {
+  return displayLimit.value < sortedPosts.value.length
+})
+
+// Setup IntersectionObserver
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && hasMorePosts.value && !loadingContent.value) {
+      displayLimit.value += 5
+    }
+  }, { threshold: 0.5 })
+
+  if (scrollSentinel.value) {
+    observer.observe(scrollSentinel.value)
+  }
+})
+
+// Re-observe if sentinel re-appears
+watch(scrollSentinel, (newEl) => {
+  if (observer) {
+    observer.disconnect()
+    if (newEl) observer.observe(newEl)
+  }
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
 })
 
 // Computed: Gợi ý 3 người dùng khác mà chưa follow

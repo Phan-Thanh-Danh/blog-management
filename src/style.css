@@ -260,3 +260,16 @@ a:hover {
 .shadow-soft-lg {
   box-shadow: var(--shadow-lg);
 }
+
+/* Mentions */
+.mention {
+  color: #0866ff;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.mention:hover {
+  text-decoration: underline;
+  color: #0055d4;
+}

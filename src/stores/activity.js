@@ -28,7 +28,7 @@ export const useActivityStore = defineStore('activity', () => {
       /**
        * Thêm hoạt động mới
        * @param {Object} activity
-       * @param {'like'|'comment'|'follow'|'reply'|'bookmark'} activity.type
+       * @param {'like'|'comment'|'follow'|'reply'|'bookmark'|'mention'} activity.type
        * @param {number} activity.targetUserId - người nhận thông báo
        * @param {number} activity.actorId - người thực hiện
        * @param {string} activity.actorName
