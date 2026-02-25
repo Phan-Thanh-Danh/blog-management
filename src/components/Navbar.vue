@@ -89,6 +89,22 @@
               </button>
             </li>
 
+            <!-- Notification Bell -->
+            <li class="nav-item">
+              <router-link to="/notifications" class="notif-bell-btn" title="Thông báo">
+                <i class="bi bi-bell"></i>
+                <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+              </router-link>
+            </li>
+
+            <!-- Saved posts -->
+            <li class="nav-item">
+              <router-link to="/saved" class="notif-bell-btn" title="Bài viết đã lưu">
+                <i class="bi bi-bookmark"></i>
+                <span v-if="authStore.savedPosts?.length > 0" class="notif-badge saved-badge">{{ authStore.savedPosts.length }}</span>
+              </router-link>
+            </li>
+
             <!-- User Dropdown -->
             <li class="nav-item dropdown">
               <button
@@ -111,6 +127,18 @@
                   <a href="#" class="dropdown-item" @click.prevent="navigateTo('profile')">
                     <i class="bi bi-person-circle me-2"></i>Tài khoản
                   </a>
+                </li>
+                <li>
+                  <router-link to="/saved" class="dropdown-item" @click="closeDropdowns">
+                    <i class="bi bi-bookmark me-2"></i>Bài đã lưu
+                    <span v-if="authStore.savedPosts?.length > 0" class="badge bg-warning text-dark ms-auto">{{ authStore.savedPosts.length }}</span>
+                  </router-link>
+                </li>
+                <li>
+                  <router-link to="/notifications" class="dropdown-item" @click="closeDropdowns">
+                    <i class="bi bi-bell me-2"></i>Thông báo
+                    <span v-if="unreadCount > 0" class="badge bg-danger ms-auto">{{ unreadCount }}</span>
+                  </router-link>
                 </li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li>
@@ -137,12 +165,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { useActivityStore } from '../stores/activity'
 import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const activityStore = useActivityStore()
 const router = useRouter()
+
+const unreadCount = computed(() => {
+  if (!authStore.user) return 0
+  return activityStore.getUnreadCount(authStore.user.id)
+})
 
 const searchQuery = ref('')
 const activeDropdown = ref(null)
@@ -468,4 +503,22 @@ const resetHome = () => {
   border: 1.5px solid var(--gray-300) !important;
   border-radius: var(--radius-sm) !important;
 }
+
+/* -- Notification Bell */
+.notif-bell-btn {
+  display: flex; align-items: center; justify-content: center;
+  position: relative; width: 38px; height: 38px; border-radius: 50%;
+  background: var(--gray-50); border: 1.5px solid var(--gray-200);
+  color: var(--gray-700); font-size: 1.05rem; text-decoration: none;
+  transition: all 0.2s ease;
+}
+.notif-bell-btn:hover { background: #eff6ff; color: #2563eb; }
+.notif-bell-btn.router-link-active { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+.notif-badge {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
+  border-radius: 99px; background: #ef4444; color: #fff; font-size: 10px;
+  font-weight: 700; display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; border: 2px solid #fff; font-family: 'Inter', sans-serif;
+}
+.notif-badge.saved-badge { background: #f59e0b; }
 </style>

@@ -176,7 +176,7 @@ const passwordStrengthText = computed(() => {
   return 'Mạnh'
 })
 
-const handleRegister = () => {
+const handleRegister = async () => {
   error.value = ''
   
   if (form.value.password !== form.value.confirmPassword) {

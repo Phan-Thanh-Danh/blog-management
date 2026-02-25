@@ -10,6 +10,7 @@ export const useAuthStore = defineStore('auth', () => {
   const comments = ref([])
   const likes = ref([])
   const commentLikes = ref([])
+  const savedPosts = ref([]) // bookmark: array of postId
   const categories = ref([
     'Công nghệ',
     'Review',
@@ -49,7 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loadData = () => {
     const savedUsers = localStorage.getItem('users')
     const savedUser = localStorage.getItem('currentUser')
-    const savedPosts = localStorage.getItem('posts')
+    const savedPostsRaw = localStorage.getItem('posts')
     const savedComments = localStorage.getItem('comments')
     const savedLikes = localStorage.getItem('likes')
 
@@ -59,10 +60,12 @@ export const useAuthStore = defineStore('auth', () => {
     if (localStorage.getItem('commentLikes')) {
       commentLikes.value = JSON.parse(localStorage.getItem('commentLikes'))
     }
+    const rawSaved = localStorage.getItem('savedPosts')
+    if (rawSaved) savedPosts.value = JSON.parse(rawSaved)
 
     // Lọc bỏ các bài viết không hợp lệ
-    if (savedPosts) {
-      const allPosts = JSON.parse(savedPosts)
+    if (savedPostsRaw) {
+      const allPosts = JSON.parse(savedPostsRaw)
       posts.value = allPosts.filter(post =>
         post.authorId &&
         post.title &&
@@ -403,6 +406,24 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('currentUser', JSON.stringify(user.value))
   }
 
+  // BOOKMARK (Lưu bài viết)
+  const toggleBookmark = (postId) => {
+    if (!user.value) throw new Error('Bạn cần đăng nhập')
+    const idx = savedPosts.value.indexOf(postId)
+    if (idx === -1) {
+      savedPosts.value.push(postId)
+    } else {
+      savedPosts.value.splice(idx, 1)
+    }
+    localStorage.setItem('savedPosts', JSON.stringify(savedPosts.value))
+  }
+
+  const isBookmarked = (postId) => savedPosts.value.includes(postId)
+
+  const bookmarkedPostsList = computed(() =>
+    posts.value.filter(p => savedPosts.value.includes(p.id))
+  )
+
   const isFollowing = (authorId) => {
     if (!user.value || !user.value.following) return false
     return user.value.following.includes(authorId)
@@ -448,6 +469,10 @@ export const useAuthStore = defineStore('auth', () => {
     getFollowingUsers,
     getFollowersUsers,
     extractHashtags,
-    trendingTags
+    trendingTags,
+    savedPosts,
+    toggleBookmark,
+    isBookmarked,
+    bookmarkedPostsList
   }
 })

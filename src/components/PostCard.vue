@@ -85,7 +85,8 @@
       <div 
         v-for="(img, index) in displayImages.slice(0, 4)" 
         :key="index" 
-        class="grid-item"
+        class="grid-item cursor-pointer"
+        @click.stop="openLightbox(index)"
       >
         <img :src="img" :alt="post.title" loading="lazy">
         <div v-if="index === 3 && displayImages.length > 4" class="more-overlay">
@@ -93,6 +94,8 @@
         </div>
       </div>
     </div>
+    <!-- Lightbox -->
+    <ImageLightbox ref="lightboxRef" />
 
     <div class="card-body p-3 pt-2">
       <!-- 4. Engagement Bar (Stats) -->
@@ -129,6 +132,15 @@
           <span class="ms-2 fw-semibold">Chia sẻ</span>
         </button>
         <button 
+          @click.stop="handleBookmark"
+          class="btn flex-grow-1 action-btn py-2"
+          :class="{ 'text-warning': isBookmarked }"
+          :title="isBookmarked ? 'Bỏ lưu' : 'Lưu bài viết'"
+        >
+          <i class="bi" :class="isBookmarked ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+          <span class="ms-2 fw-semibold d-none d-sm-inline">{{ isBookmarked ? 'Đã lưu' : 'Lưu' }}</span>
+        </button>
+        <button 
           @click.stop="handleTranslate" 
           class="btn flex-grow-1 action-btn py-2"
           :disabled="isTranslating"
@@ -148,11 +160,19 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useDialogStore } from '../stores/dialog'
+import { useActivityStore } from '../stores/activity'
 import { translateHTMLContent } from '../utils/geminiService'
+import ImageLightbox from './ImageLightbox.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const dialogStore = useDialogStore()
+const activityStore = useActivityStore()
+
+const lightboxRef = ref(null)
+const openLightbox = (index) => {
+  lightboxRef.value?.open(displayImages.value, index)
+}
 
 const props = defineProps({
   post: {
@@ -229,10 +249,8 @@ const likesCount = computed(() => {
   return authStore.getPostLikesCount(props.post.id)
 })
 
-// Computed: Kiểm tra đã like chưa
-const isLiked = computed(() => {
-  return authStore.isPostLiked(props.post.id)
-})
+const isLiked = computed(() => authStore.isPostLiked(props.post.id))
+const isBookmarked = computed(() => authStore.isBookmarked(props.post.id))
 
 // Computed: Đếm số comments (bao gồm cả replies)
 const commentsCount = computed(() => {
@@ -283,12 +301,32 @@ const handleLike = () => {
     dialogStore.alert('Bạn cần đăng nhập để thích bài viết', 'info', 'Yêu cầu đăng nhập')
     return
   }
-
   try {
+    const wasLiked = authStore.isPostLiked(props.post.id)
     authStore.toggleLike(props.post.id)
+    // Tracking activity khi like (không tự like bài của mình)
+    if (!wasLiked && authStore.user.id !== props.post.authorId) {
+      activityStore.addActivity({
+        type: 'like',
+        targetUserId: props.post.authorId,
+        actorId: authStore.user.id,
+        actorName: authStore.user.name,
+        actorAvatar: authStore.user.avatar,
+        postId: props.post.id,
+        postTitle: props.post.title
+      })
+    }
   } catch (error) {
     dialogStore.alert(error.message, 'error')
   }
+}
+
+const handleBookmark = () => {
+  if (!authStore.isAuthenticated) {
+    dialogStore.alert('Bạn cần đăng nhập để lưu bài viết', 'info', 'Yêu cầu đăng nhập')
+    return
+  }
+  authStore.toggleBookmark(props.post.id)
 }
 
 const handleDelete = async () => {
