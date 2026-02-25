@@ -130,8 +130,9 @@ const selectReaction = (type) => {
 }
 
 .reaction-emoji {
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
+  vertical-align: middle;
 }
 
 /* Picker popup */

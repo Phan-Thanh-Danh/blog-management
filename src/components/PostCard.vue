@@ -102,18 +102,20 @@
       <div class="d-flex justify-content-between align-items-center px-1 mb-2">
          <div class="stats-icons d-flex align-items-center gap-1">
             <!-- Reaction icons (top 3 loại) -->
-            <div v-if="reactionSummary.total > 0" class="d-flex align-items-center">
+            <template v-if="reactionSummary.total > 0">
               <span
                 v-for="rType in reactionSummary.top"
                 :key="rType"
-                class="reaction-stat-emoji"
-                style="font-size: 14px; line-height: 1;"
+                style="font-size: 13px; line-height: 1;"
               >{{ reactionEmoji(rType) }}</span>
-            </div>
-            <div v-else class="icon-circle bg-primary text-white me-1">
-               <i class="bi bi-hand-thumbs-up-fill" style="font-size: 10px;"></i>
-            </div>
-            <span class="text-muted small ms-1">{{ reactionSummary.total || 0 }}</span>
+              <span class="text-muted small ms-1">{{ reactionSummary.total }}</span>
+            </template>
+            <template v-else>
+              <div class="icon-circle bg-primary text-white me-1">
+                <i class="bi bi-hand-thumbs-up-fill" style="font-size: 10px;"></i>
+              </div>
+              <span class="text-muted small">0</span>
+            </template>
          </div>
          <div class="text-muted small">
             {{ commentsCount }} bình luận
@@ -508,5 +510,13 @@ const resetTranslation = () => {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* Cho phép picker popup hiển thị ra ngoài card */
+:deep(.card) {
+  overflow: visible !important;
+}
+:deep(.card-body) {
+  overflow: visible !important;
 }
 </style>
