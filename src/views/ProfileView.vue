@@ -43,6 +43,9 @@
                   <i class="bi" :class="isFollowingTarget ? 'bi-person-check-fill' : 'bi-person-plus-fill'"></i>
                   {{ isFollowingTarget ? 'Đang theo dõi' : 'Theo dõi' }}
                 </button>
+                <button v-if="!isMyProfile" @click="goToChat" class="btn btn-outline-dark fw-bold rounded-2 px-3 shadow-sm">
+                  <i class="bi bi-chat-dots-fill me-2"></i> Nhắn tin
+                </button>
                 <button class="btn btn-outline-dark fw-bold rounded-2 px-3 shadow-sm">
                   <i class="bi bi-three-dots"></i>
                 </button>
@@ -373,6 +376,11 @@ const handleToggleFollow = async () => {
   }
 }
 
+const goToChat = () => {
+  if (!targetUser.value) return
+  router.push({ path: '/messages', query: { user_id: targetUser.value.id } })
+}
+
 // File inputs refs
 const avatarInput = ref(null)
 const coverInput = ref(null)
@@ -400,7 +408,7 @@ const activeTab = ref('posts')
 // Computed: Lấy bài viết của target user
 const myPosts = computed(() => {
   if (!targetUser.value) return []
-  return authStore.posts.filter(p => p.authorId === targetUser.value.id)
+  return authStore.visiblePosts.filter(p => p.authorId === targetUser.value.id)
 })
 
 // Computed: Danh sách ảnh gần đây từ bài viết

@@ -19,9 +19,21 @@
             <img :src="authStore.user?.avatar" class="rounded-circle border me-2" width="45" height="45" style="object-fit: cover;">
             <div>
               <h6 class="fw-bold mb-0">{{ authStore.user?.name }}</h6>
-              <span class="badge bg-light text-dark border fw-normal">
-                <i class="bi bi-globe me-1"></i> Công khai
-              </span>
+              <div class="dropdown">
+                <button 
+                  class="btn btn-sm btn-light border dropdown-toggle py-0 px-2 small shadow-none" 
+                  type="button" 
+                  @click.stop="isVisibilityDropdownOpen = !isVisibilityDropdownOpen"
+                >
+                  <i :class="visibilityIcon(form.visibility)" class="me-1"></i>
+                  {{ visibilityLabel(form.visibility) }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-sm shadow-sm border-dark" :class="{ show: isVisibilityDropdownOpen }">
+                  <li><a class="dropdown-item py-1 small" href="#" @click.prevent="selectVisibility('public')"><i class="bi bi-globe me-2"></i>Công khai</a></li>
+                  <li><a class="dropdown-item py-1 small" href="#" @click.prevent="selectVisibility('following')"><i class="bi bi-people me-2"></i>Người theo dõi</a></li>
+                  <li><a class="dropdown-item py-1 small" href="#" @click.prevent="selectVisibility('private')"><i class="bi bi-lock me-2"></i>Chỉ mình tôi</a></li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -129,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { Modal } from 'bootstrap'
 import { useAuthStore } from '../stores/auth'
 import { useDialogStore } from '../stores/dialog'
@@ -158,6 +170,7 @@ let modalInstance = null
 const loading = ref(false)
 const summarizing = ref(false)
 const showImageUpload = ref(false)
+const isVisibilityDropdownOpen = ref(false)
 
 const form = ref({
   id: null,
@@ -165,7 +178,8 @@ const form = ref({
   category: '',
   content: '',
   images: [],
-  summary: ''
+  summary: '',
+  visibility: 'public'
 })
 
 const resetForm = () => {
@@ -175,7 +189,8 @@ const resetForm = () => {
     category: '',
     content: '',
     images: [],
-    summary: ''
+    summary: '',
+    visibility: 'public'
   }
   showImageUpload.value = false
 }
@@ -188,7 +203,8 @@ const syncForm = () => {
       category: props.initialData.category || '',
       content: props.initialData.content || '',
       images: props.initialData.images ? [...props.initialData.images] : (props.initialData.image ? [props.initialData.image] : []),
-      summary: props.initialData.summary || ''
+      summary: props.initialData.summary || '',
+      visibility: props.initialData.visibility || 'public'
     }
     if (form.value.images.length > 0) showImageUpload.value = true
   } else {
@@ -266,7 +282,8 @@ const handleSubmit = async () => {
       // For simplicity, we store the first image in 'image' and all in 'images'
       image: form.value.images.length > 0 ? form.value.images[0] : '',
       images: form.value.images,
-      summary: form.value.summary
+      summary: form.value.summary,
+      visibility: form.value.visibility
     }
 
     if (props.mode === 'create') {
@@ -321,6 +338,41 @@ const handleMentionNotifications = (content, postId, postTitle) => {
       })
     }
   })
+}
+
+const selectVisibility = (v) => {
+  form.value.visibility = v
+  isVisibilityDropdownOpen.value = false
+}
+
+const handleOutsideClick = (e) => {
+  if (isVisibilityDropdownOpen.value && !e.target.closest('.dropdown')) {
+    isVisibilityDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('click', handleOutsideClick)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleOutsideClick)
+})
+
+const visibilityLabel = (v) => {
+  switch(v) {
+    case 'following': return 'Người theo dõi'
+    case 'private': return 'Chỉ mình tôi'
+    default: return 'Công khai'
+  }
+}
+
+const visibilityIcon = (v) => {
+  switch(v) {
+    case 'following': return 'bi bi-people'
+    case 'private': return 'bi bi-lock'
+    default: return 'bi bi-globe'
+  }
 }
 </script>
 

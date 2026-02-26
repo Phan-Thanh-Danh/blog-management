@@ -18,7 +18,7 @@
                   <div class="d-flex align-items-center gap-1">
                     <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
                     <span class="text-muted small">•</span>
-                    <i class="bi bi-globe text-muted x-small"></i>
+                    <i :class="visibilityIcon(post.visibility)" class="text-muted x-small" :title="visibilityLabel(post.visibility)"></i>
                   </div>
                 </div>
                 <div v-if="authStore.user && authStore.user.id === post.authorId" class="dropdown">
@@ -282,7 +282,16 @@ const currentImageIndex = ref(0)
 // Computed: Lấy bài viết
 const post = computed(() => {
   const postId = parseInt(route.params.id)
-  return authStore.posts.find(p => p.id === postId)
+  const foundPost = authStore.posts.find(p => p.id === postId)
+  if (!foundPost) return null
+  
+  // Kiểm tra quyền xem
+  const isAuthor = authStore.user && Number(foundPost.authorId) === Number(authStore.user.id)
+  const isPublic = foundPost.visibility === 'public' || !foundPost.visibility
+  const isFollowing = foundPost.visibility === 'following' && authStore.isFollowing(foundPost.authorId)
+  
+  if (isAuthor || isPublic || isFollowing) return foundPost
+  return null // Không có quyền xem
 })
 
 const author = computed(() => {
@@ -384,6 +393,22 @@ const formatDate = (dateString) => {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   })
+}
+
+const visibilityLabel = (v) => {
+  switch(v) {
+    case 'following': return 'Người theo dõi'
+    case 'private': return 'Chỉ mình tôi'
+    default: return 'Công khai'
+  }
+}
+
+const visibilityIcon = (v) => {
+  switch(v) {
+    case 'following': return 'bi bi-people'
+    case 'private': return 'bi bi-lock'
+    default: return 'bi bi-globe'
+  }
 }
 
 const handleAddComment = () => {

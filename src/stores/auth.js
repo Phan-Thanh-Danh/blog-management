@@ -47,6 +47,30 @@ export const useAuthStore = defineStore('auth', () => {
       .map(entry => entry[0])
   })
 
+  // Lọc bài viết theo quyền riêng tư
+  const visiblePosts = computed(() => {
+    if (!user.value) {
+      // Nếu chưa đăng nhập, chỉ thấy bài viết công khai
+      return posts.value.filter(p => p.visibility === 'public' || !p.visibility)
+    }
+
+    return posts.value.filter(p => {
+      // 1. Bài viết của chính mình
+      if (Number(p.authorId) === Number(user.value.id)) return true
+
+      // 2. Bài viết công khai
+      if (p.visibility === 'public' || !p.visibility) return true
+
+      // 3. Bài viết cho người theo dõi
+      if (p.visibility === 'following') {
+        return isFollowing(p.authorId)
+      }
+
+      // 4. Bài viết riêng tư (chỉ mình tác giả thấy - đã check ở bước 1)
+      return false
+    })
+  })
+
   // Load dữ liệu từ localStorage khi khởi tạo
   const loadData = () => {
     const savedUsers = localStorage.getItem('users')
@@ -177,6 +201,7 @@ export const useAuthStore = defineStore('auth', () => {
       authorName: user.value.name,
       authorAvatar: user.value.avatar,
       summary: postData.summary || '', // THÊM: Tóm tắt bài viết
+      visibility: postData.visibility || 'public', // THÊM: Quyền riêng tư (public, following, private)
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -219,6 +244,7 @@ export const useAuthStore = defineStore('auth', () => {
       category: postData.category || 'Chung',
       tags: extractHashtags(postData.content),
       summary: postData.summary || post.summary || '', // Cập nhật tóm tắt
+      visibility: postData.visibility || post.visibility || 'public',
       updatedAt: new Date().toISOString()
     }
 
@@ -513,6 +539,16 @@ export const useAuthStore = defineStore('auth', () => {
     return users.value.filter(u => u.following && u.following.includes(userId))
   }
 
+  // TÌM KIẾM NGƯỜI DÙNG
+  const searchUsers = (query) => {
+    if (!query) return []
+    const lowerQuery = query.toLowerCase()
+    return users.value.filter(u =>
+      u.name.toLowerCase().includes(lowerQuery) ||
+      u.email.toLowerCase().includes(lowerQuery)
+    )
+  }
+
   return {
     user,
     users,
@@ -550,6 +586,8 @@ export const useAuthStore = defineStore('auth', () => {
     reactions,
     toggleReaction,
     getUserReaction,
-    getPostReactionsSummary
+    getPostReactionsSummary,
+    searchUsers,
+    visiblePosts
   }
 })

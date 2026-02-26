@@ -42,6 +42,17 @@ const router = createRouter({
       name: 'saved',
       component: () => import('../views/SavedView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: () => import('../views/SearchView.vue')
+    },
+    {
+      path: '/messages',
+      name: 'messages',
+      component: () => import('../views/MessagesView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

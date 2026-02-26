@@ -272,7 +272,7 @@ const resetHome = () => {
 
 // Computed: Sắp xếp và Lọc posts
 const sortedPosts = computed(() => {
-  let posts = [...authStore.posts]
+  let posts = [...authStore.visiblePosts]
 
   // Lọc theo Feed Type (Following)
   if (feedType.value === 'following') {

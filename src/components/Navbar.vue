@@ -65,20 +65,59 @@
         </ul>
 
         <!-- Smart Search Bar -->
-        <form @submit.prevent="handleSearch" class="search-form mx-lg-3 my-2 my-lg-0">
-          <div class="search-wrapper">
+        <div class="search-form mx-lg-3 my-2 my-lg-0 position-relative">
+          <form @submit.prevent="handleSearch" class="search-wrapper">
             <i class="bi bi-search search-icon"></i>
             <input
               v-model="searchQuery"
               type="text"
               class="search-input"
-              placeholder="Tìm kiếm bài viết..."
+              placeholder="Tìm kiếm bài viết, người dùng..."
+              @focus="isSearchFocused = true"
             />
             <button v-if="searchQuery" type="button" class="search-clear" @click="searchQuery = ''">
               <i class="bi bi-x"></i>
             </button>
+          </form>
+
+          <!-- Quick Search Results -->
+          <div v-if="isSearchFocused && searchQuery.trim()" class="search-results-preview dropdown-menu show shadow-lg border-dark p-2 mt-1">
+             <div v-if="quickResults.users.length > 0">
+                <h6 class="dropdown-header text-uppercase small fw-bold px-2">Người dùng</h6>
+                <router-link 
+                  v-for="u in quickResults.users" 
+                  :key="u.id" 
+                  :to="`/profile/${u.id}`"
+                  class="dropdown-item d-flex align-items-center gap-2 py-2 rounded"
+                  @click="searchQuery = ''; isSearchFocused = false"
+                >
+                  <img :src="u.avatar" class="rounded-circle border" width="30" height="30" style="object-fit: cover;">
+                  <span class="fw-semibold small">{{ u.name }}</span>
+                </router-link>
+             </div>
+             <div v-if="quickResults.posts.length > 0" :class="{ 'mt-2 border-top pt-2': quickResults.users.length > 0 }">
+                <h6 class="dropdown-header text-uppercase small fw-bold px-2">Bài viết</h6>
+                <router-link 
+                  v-for="p in quickResults.posts" 
+                  :key="p.id" 
+                  :to="`/post/${p.id}`"
+                  class="dropdown-item py-2 rounded"
+                  @click="searchQuery = ''; isSearchFocused = false"
+                >
+                  <div class="fw-semibold small text-truncate">{{ p.title }}</div>
+                  <div class="x-small text-muted">{{ p.category || 'Chung' }}</div>
+                </router-link>
+             </div>
+             <div v-if="quickResults.users.length === 0 && quickResults.posts.length === 0" class="p-3 text-center text-muted small">
+                Không tìm thấy kết quả nào
+             </div>
+             <div class="border-top mt-2 pt-2 text-center">
+                <a href="#" @click.prevent="handleSearch" class="text-primary small fw-bold text-decoration-none">
+                  Xem tất cả kết quả cho "{{ searchQuery }}"
+                </a>
+             </div>
           </div>
-        </form>
+        </div>
 
         <!-- Right Nav -->
         <ul class="navbar-nav align-items-center gap-2">
@@ -87,6 +126,14 @@
               <button @click="navigateTo('home-create')" class="btn btn-create">
                 <i class="bi bi-plus-lg me-1"></i> Đăng bài
               </button>
+            </li>
+
+            <!-- Messages -->
+            <li class="nav-item">
+              <router-link to="/messages" class="notif-bell-btn" title="Tin nhắn">
+                <i class="bi bi-chat-dots"></i>
+                <span v-if="chatStore.totalUnreadCount > 0" class="notif-badge">{{ chatStore.totalUnreadCount > 9 ? '9+' : chatStore.totalUnreadCount }}</span>
+              </router-link>
             </li>
 
             <!-- Notification Bell -->
@@ -129,6 +176,12 @@
                   </a>
                 </li>
                 <li>
+                  <router-link to="/messages" class="dropdown-item" @click="closeDropdowns">
+                    <i class="bi bi-chat-dots me-2"></i>Tin nhắn
+                    <span v-if="chatStore.totalUnreadCount > 0" class="badge bg-danger ms-auto">{{ chatStore.totalUnreadCount }}</span>
+                  </router-link>
+                </li>
+                <li>
                   <router-link to="/saved" class="dropdown-item" @click="closeDropdowns">
                     <i class="bi bi-bookmark me-2"></i>Bài đã lưu
                     <span v-if="authStore.savedPosts?.length > 0" class="badge bg-warning text-dark ms-auto">{{ authStore.savedPosts.length }}</span>
@@ -168,11 +221,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useActivityStore } from '../stores/activity'
-import { useRouter } from 'vue-router'
+import { useChatStore } from '../stores/chat'
+import { useRouter, useRoute } from 'vue-router'
 
 const authStore = useAuthStore()
 const activityStore = useActivityStore()
+const chatStore = useChatStore()
 const router = useRouter()
+const route = useRoute()
 
 const unreadCount = computed(() => {
   if (!authStore.user) return 0
@@ -180,11 +236,22 @@ const unreadCount = computed(() => {
 })
 
 const searchQuery = ref('')
+const isSearchFocused = ref(false)
 const activeDropdown = ref(null)
 
+const quickResults = computed(() => {
+  if (!searchQuery.value.trim()) return { users: [], posts: [] }
+  const q = searchQuery.value.toLowerCase()
+  return {
+    users: authStore.users.filter(u => u.name.toLowerCase().includes(q)).slice(0, 3),
+    posts: authStore.posts.filter(p => p.title.toLowerCase().includes(q)).slice(0, 3)
+  }
+})
+
 const closeDropdown = (e) => {
-  if (!e.target.closest('.dropdown') && !e.target.closest('.btn-user-avatar')) {
+  if (!e.target.closest('.dropdown') && !e.target.closest('.btn-user-avatar') && !e.target.closest('.search-form')) {
     activeDropdown.value = null
+    isSearchFocused.value = false
   }
 }
 
@@ -200,6 +267,11 @@ const toggleDropdown = (name) => {
   activeDropdown.value = activeDropdown.value === name ? null : name
 }
 
+const closeDropdowns = () => {
+  activeDropdown.value = null
+  isSearchFocused.value = false
+}
+
 const navigateTo = (pathOrTag) => {
   activeDropdown.value = null
   if (pathOrTag === 'profile') {
@@ -207,14 +279,15 @@ const navigateTo = (pathOrTag) => {
   } else if (pathOrTag === 'home-create') {
     router.push({ path: '/', query: { action: 'create' } })
   } else {
-    router.push({ path: '/', query: { search: pathOrTag } })
+    router.push({ path: '/search', query: { q: pathOrTag } })
   }
 }
 
 const handleSearch = () => {
   activeDropdown.value = null
+  isSearchFocused.value = false
   if (searchQuery.value.trim()) {
-    router.push({ path: '/', query: { search: searchQuery.value.trim() } })
+    router.push({ path: '/search', query: { q: searchQuery.value.trim() } })
     searchQuery.value = ''
   }
 }
@@ -413,6 +486,13 @@ const resetHome = () => {
   color: var(--gray-700);
 }
 
+.search-results-preview {
+  width: 100%;
+  top: 100%;
+  left: 0;
+  z-index: 1001;
+}
+
 /* ── Buttons ─────────────────────────────────────────────── */
 .btn-create {
   background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
@@ -521,4 +601,5 @@ const resetHome = () => {
   padding: 0 4px; border: 2px solid #fff; font-family: 'Inter', sans-serif;
 }
 .notif-badge.saved-badge { background: #f59e0b; }
+.x-small { font-size: 0.75rem; }
 </style>

@@ -20,7 +20,7 @@
           <div class="d-flex align-items-center gap-1">
             <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
             <span class="text-muted small">•</span>
-            <i class="bi bi-globe text-muted x-small"></i>
+            <i :class="visibilityIcon(post.visibility)" class="text-muted x-small" :title="visibilityLabel(post.visibility)"></i>
           </div>
         </div>
         
@@ -310,6 +310,22 @@ const formatDate = (dateString) => {
     month: '2-digit',
     year: 'numeric'
   })
+}
+
+const visibilityLabel = (v) => {
+  switch(v) {
+    case 'following': return 'Người theo dõi'
+    case 'private': return 'Chỉ mình tôi'
+    default: return 'Công khai'
+  }
+}
+
+const visibilityIcon = (v) => {
+  switch(v) {
+    case 'following': return 'bi bi-people'
+    case 'private': return 'bi bi-lock'
+    default: return 'bi bi-globe'
+  }
 }
 
 const handleReact = (reactionType) => {
