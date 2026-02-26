@@ -112,10 +112,13 @@
                 >
                   <div class="max-w-75">
                     <div 
-                      class="msg-bubble px-3 py-2 border border-dark"
+                      class="msg-bubble px-3 py-2 border border-dark overflow-hidden"
                       :class="msg.senderId === authStore.user?.id ? 'bg-black text-white rounded-sent' : 'bg-white rounded-received'"
                     >
-                      {{ msg.content }}
+                      <div v-if="msg.image" class="mb-2">
+                        <img :src="msg.image" class="img-fluid rounded message-img" alt="shared image">
+                      </div>
+                      <div v-if="msg.content">{{ msg.content }}</div>
                     </div>
                     <small class="text-muted mt-1 px-1" style="font-size: 0.65rem;" :class="msg.senderId === authStore.user?.id ? 'd-block text-end' : 'd-block text-start'">
                       {{ formatTime(msg.createdAt) }}
@@ -132,20 +135,29 @@
               <!-- Message Input -->
               <div class="p-3 border-top border-dark bg-white">
                 <form @submit.prevent="handleSendMessage" class="d-flex gap-2 align-items-center">
-                  <button type="button" class="btn btn-ghost-dark p-0 flex-center" style="width: 36px; height: 36px;"><i class="bi bi-plus-circle fs-5"></i></button>
-                  <button type="button" class="btn btn-ghost-dark p-0 flex-center" style="width: 36px; height: 36px;"><i class="bi bi-images fs-5"></i></button>
+                  <input type="file" ref="imageInput" class="d-none" accept="image/*" @change="handleImageUpload">
+                  <button 
+                    type="button" 
+                    class="btn btn-ghost-dark p-0 flex-center" 
+                    style="width: 36px; height: 36px;"
+                    @click="imageInput?.click()"
+                    :disabled="isSendingImage"
+                  >
+                    <i class="bi" :class="isSendingImage ? 'spinner-border spinner-border-sm' : 'bi-images fs-5'"></i>
+                  </button>
                   <input 
                     v-model="newMessage" 
                     type="text" 
                     class="form-control border border-dark rounded-pill px-3 shadow-none" 
                     placeholder="Nhập tin nhắn..."
                     ref="msgInput"
+                    :disabled="isSendingImage"
                   >
                   <button 
                     type="submit" 
                     class="btn btn-black rounded-circle p-0 flex-center" 
                     style="width: 40px; height: 40px;"
-                    :disabled="!newMessage.trim()"
+                    :disabled="!newMessage.trim() || isSendingImage"
                   >
                     <i class="bi bi-send-fill fs-5"></i>
                   </button>
@@ -172,16 +184,21 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useChatStore } from '../stores/chat'
+import { useDialogStore } from '../stores/dialog'
+import { compressImage } from '../utils/imageHelper'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const chatStore = useChatStore()
+const dialogStore = useDialogStore()
 
 const selectedUserId = ref(null)
 const newMessage = ref('')
 const messageContainer = ref(null)
 const msgInput = ref(null)
+const imageInput = ref(null)
+const isSendingImage = ref(false)
 const showFriendsOnly = ref(false)
 const searchFriendsQuery = ref('')
 
@@ -230,6 +247,31 @@ const handleSendMessage = () => {
   chatStore.sendMessage(selectedUserId.value, newMessage.value.trim())
   newMessage.value = ''
   scrollToBottom()
+}
+
+const handleImageUpload = (e) => {
+  const file = e.target.files[0]
+  if (!file || !selectedUserId.value) return
+  
+  const reader = new FileReader()
+  reader.onload = async (event) => {
+    try {
+      isSendingImage.value = true
+      const compressed = await compressImage(event.target.result)
+      chatStore.sendMessage(selectedUserId.value, '', compressed)
+      scrollToBottom()
+    } catch (err) {
+      console.error('Lỗi nén ảnh:', err)
+      dialogStore.alert('Không thể nén hoặc gửi ảnh. Vui lòng thử lại.', 'error')
+    } finally {
+      isSendingImage.value = false
+      if (imageInput.value) imageInput.value.value = ''
+    }
+  }
+  reader.onerror = () => {
+    dialogStore.alert('Không thể đọc file ảnh.', 'error')
+  }
+  reader.readAsDataURL(file)
 }
 
 const scrollToBottom = async () => {
@@ -284,6 +326,16 @@ onMounted(() => {
   word-wrap: break-word;
   font-size: 0.95rem;
   box-shadow: 2px 2px 0 rgba(0,0,0,1);
+}
+.message-img {
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.message-img:hover {
+  transform: scale(1.02);
 }
 .bg-chat {
   background-color: #f8f9fa;

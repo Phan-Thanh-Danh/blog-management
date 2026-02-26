@@ -42,7 +42,7 @@ export const compressImage = (base64Str, maxWidth = 800, maxHeight = 800, qualit
                   const compressedBase64 = canvas.toDataURL('image/jpeg', quality)
                   resolve(compressedBase64)
             }
-            img.onerror = (error) => reject(error)
+            img.onerror = () => reject(new Error('Không thể tải ảnh để nén.'))
       })
 }
 

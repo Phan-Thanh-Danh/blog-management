@@ -65,13 +65,14 @@ export const useChatStore = defineStore('chat', () => {
       }
 
       // Gửi tin nhắn
-      const sendMessage = (receiverId, content) => {
+      const sendMessage = (receiverId, content, image = null) => {
             if (!authStore.user) return
             const newMessage = {
                   id: Date.now(),
                   senderId: authStore.user.id,
                   receiverId: Number(receiverId),
                   content,
+                  image,
                   createdAt: new Date().toISOString(),
                   read: false
             }
